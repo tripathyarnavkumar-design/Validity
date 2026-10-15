@@ -1,0 +1,776 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Validity Workbench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:wght@500;600&display=swap">
+<style>
+/* Layout: a methods workbench. Six tabs (five validity tests + report); each test = criteria rail on the left, live workspace on the right. */
+:root{
+  --bg:#F1F4F3; --panel:#FFFFFF; --ink:#14232A; --muted:#55666D; --line:#D2DBDC; --line-soft:#E5EBEB;
+  --accent:#0E5C63; --accent-ink:#FFFFFF; --accent-soft:#DDECEB; --mark:#A86E08;
+  --good:#256F41; --good-bg:#E0F0E5; --warn:#8C5A0B; --warn-bg:#F6EAD2; --bad:#A33232; --bad-bg:#F5DFDE; --na:#66767D; --na-bg:#E7ECED;
+  --display:"Spectral",Georgia,"Times New Roman",serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E161A; --panel:#152127; --ink:#E2EBEB; --muted:#93A5AA; --line:#2A3A41; --line-soft:#1F2D33;
+  --accent:#5EC0C2; --accent-ink:#06242A; --accent-soft:#16383C; --mark:#E2AE4E;
+  --good:#71C78E; --good-bg:#16352A; --warn:#E6B35B; --warn-bg:#3A2D14; --bad:#F08585; --bad-bg:#3F1E20; --na:#9AAAB0; --na-bg:#22313A;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E161A; --panel:#152127; --ink:#E2EBEB; --muted:#93A5AA; --line:#2A3A41; --line-soft:#1F2D33;
+  --accent:#5EC0C2; --accent-ink:#06242A; --accent-soft:#16383C; --mark:#E2AE4E;
+  --good:#71C78E; --good-bg:#16352A; --warn:#E6B35B; --warn-bg:#3A2D14; --bad:#F08585; --bad-bg:#3F1E20; --na:#9AAAB0; --na-bg:#22313A;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 32px;padding-bottom:20px}
+.eyebrow{font:500 11.5px var(--mono);text-transform:uppercase;letter-spacing:.09em;color:var(--accent);margin:0 0 6px}
+h1{font:600 clamp(30px,5vw,42px)/1.1 var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lede{max-width:62ch;color:var(--muted);margin:8px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:8px}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;scrollbar-width:thin}
+.tab{appearance:none;border:0;background:none;padding:12px 14px 11px;font:500 14px var(--body);color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--na);flex:none}
+.dot.good{background:var(--good)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+.panel{display:grid;grid-template-columns:280px minmax(0,1fr);gap:36px;padding-top:28px}
+@media (max-width:900px){.panel{grid-template-columns:minmax(0,1fr);gap:20px}}
+.rail{font-size:14px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.rail h2{font:600 27px/1.15 var(--display);margin:0;text-wrap:balance}
+.rail .q{color:var(--muted);margin:0}
+.formula{font:12.5px/1.75 var(--mono);background:var(--accent-soft);color:var(--ink);padding:10px 12px;border-radius:4px;overflow-x:auto;white-space:pre}
+.rail h4{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:4px 0 0}
+.rail ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.refs{font-size:12.5px;color:var(--muted)}
+.work{display:flex;flex-direction:column;gap:22px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;min-width:0}
+.card h3{font:600 15.5px var(--body);margin:0}
+.card .sub{color:var(--muted);font-size:13.5px;margin:4px 0 14px;max-width:70ch}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.toolbar .sp{flex:1}
+.btn{font:500 13px var(--body);padding:7px 12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:4px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+select,input[type=text],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 8px}
+label.fld{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table.data{border-collapse:collapse;width:100%;font-size:13.5px}
+table.data th{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.data th.n{text-align:right}
+table.data td{padding:7px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+td.lab{font-family:var(--mono);font-size:12.5px}
+td.good-c{background:var(--good-bg)} td.warn-c{background:var(--warn-bg)} td.bad-c{background:var(--bad-bg)} td.diag{background:var(--accent-soft);font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12px var(--body);padding:2px 9px 2px 8px;border-radius:999px;white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.chip.good{background:var(--good-bg);color:var(--good)} .chip.warn{background:var(--warn-bg);color:var(--warn)} .chip.bad{background:var(--bad-bg);color:var(--bad)} .chip.na{background:var(--na-bg);color:var(--na)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.stat{border-left:3px solid var(--line);padding:2px 0 2px 12px;min-width:0}
+.stat.good{border-color:var(--good)} .stat.warn{border-color:var(--warn)} .stat.bad{border-color:var(--bad)}
+.stat .k{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.stat .v{font:500 22px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.stat .t{font-size:12.5px;color:var(--muted)}
+table.grid{border-collapse:collapse;font-size:13px}
+table.grid th{font:500 11px var(--mono);color:var(--muted);padding:4px;text-align:center}
+table.grid th.itemcol{text-align:left}
+table.grid td{padding:3px}
+table.grid input.rate{width:44px;text-align:center;font-family:var(--mono);padding:5px 2px}
+table.grid input.rate.invalid{border-color:var(--bad);background:var(--bad-bg)}
+table.grid input.iname{width:min(340px,48vw)}
+textarea#dataText{width:100%;min-height:190px;font:12.5px/1.5 var(--mono);resize:vertical}
+.msg{font-size:13px;padding:8px 12px;border-radius:4px;margin:0 0 12px}
+.msg.warn{background:var(--warn-bg);color:var(--warn)} .msg.bad{background:var(--bad-bg);color:var(--bad)} .msg.info{background:var(--accent-soft);color:var(--ink)}
+.example{font:500 11.5px var(--mono);color:var(--mark);text-transform:uppercase;letter-spacing:.07em}
+.threats{display:flex;flex-direction:column}
+.threat{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.threat:last-child{border-bottom:0}
+.threat .nm{font-weight:600;font-size:14.5px}
+.threat .nm .tag{font:500 10.5px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-left:6px}
+.threat .ds{font-size:13px;color:var(--muted);margin-top:2px}
+.threat .hint{font-size:12.5px;margin-top:4px}
+.threat input.note{grid-column:1/-1;font-size:13px}
+@media (max-width:640px){.threat{grid-template-columns:minmax(0,1fr)}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;align-self:start;flex-wrap:wrap}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;padding:5px 10px;font-size:12.5px;border-right:1px solid var(--line);white-space:nowrap}
+.seg label:last-child span{border-right:0}
+.seg input:checked+span{background:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:-2px}
+.meter{height:8px;background:var(--line-soft);border-radius:4px;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.row input[type=number]{width:96px;font-family:var(--mono)}
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}
+.calc h4{font:600 13.5px var(--body);margin:0 0 8px}
+.calc .out{margin-top:12px;font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+.kv{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dotted var(--line);padding:3px 0}
+.kv b{font:500 13.5px var(--mono);font-variant-numeric:tabular-nums}
+.rep-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.rep{border:1px solid var(--line);border-top:3px solid var(--na);border-radius:4px;padding:14px;background:var(--panel);display:flex;flex-direction:column;gap:6px}
+.rep.good{border-top-color:var(--good)} .rep.warn{border-top-color:var(--warn)} .rep.bad{border-top-color:var(--bad)}
+.rep h3{font:600 18px var(--display);margin:0}
+.rep p{margin:0;font-size:13.5px}
+.rep ul{margin:0;padding-left:18px;font-size:13px;color:var(--muted)}
+pre#repText{font:12.5px/1.6 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:14px;white-space:pre-wrap;margin:0;max-height:420px;overflow:auto}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+a{color:var(--accent)}
+.setup{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;padding:12px 0 14px;border-top:1px solid var(--line)}
+.setup-g{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;min-width:0}
+.setup .k{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.picks{display:flex;flex-wrap:wrap;gap:6px}
+.pick{position:relative;cursor:pointer}
+.pick input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.pick span{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;color:var(--muted);background:var(--panel)}
+.pick span::before{content:"";width:10px;height:10px;border-radius:2px;border:1.5px solid currentColor}
+.pick input:checked+span{color:var(--ink);border-color:var(--accent)}
+.pick input:checked+span::before{background:var(--accent);border-color:var(--accent)}
+.pick input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.pick input:disabled+span{opacity:.55;cursor:default}
+.panel{scroll-margin-top:calc(56px + env(safe-area-inset-top,0px))}
+.onepage .panel+.panel{border-top:1px solid var(--line);margin-top:40px;padding-top:36px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap" id="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Research methods · instrument check</p>
+      <h1>Validity Workbench</h1>
+      <p class="lede">Test the content, construct, discriminant, internal and external validity of a study. Every tab opens with example data so you can see how it works; replace it with your own and the verdicts update as you type.</p>
+    </div>
+    <div class="legend" aria-label="Verdict legend">
+      <span class="chip good">Meets criterion</span><span class="chip warn">Review</span><span class="chip bad">Fails criterion</span><span class="chip na">Not assessed</span>
+    </div>
+  </header>
+
+  <div class="setup" id="setup">
+    <div class="setup-g">
+      <span class="k">Tests</span>
+      <div class="seg" role="radiogroup" aria-label="Which tests to run">
+        <label><input type="radio" name="scope" id="scope-all" value="all"><span>All together</span></label>
+        <label><input type="radio" name="scope" id="scope-pick" value="pick"><span>Selected only</span></label>
+      </div>
+      <div class="picks" id="picks" hidden>
+        <label class="pick"><input type="checkbox" id="pk-content" value="content"><span>Content</span></label>
+        <label class="pick"><input type="checkbox" id="pk-construct" value="construct"><span>Construct</span></label>
+        <label class="pick"><input type="checkbox" id="pk-discriminant" value="discriminant"><span>Discriminant</span></label>
+        <label class="pick"><input type="checkbox" id="pk-internal" value="internal"><span>Internal</span></label>
+        <label class="pick"><input type="checkbox" id="pk-external" value="external"><span>External</span></label>
+      </div>
+    </div>
+    <div class="setup-g">
+      <span class="k">Layout</span>
+      <div class="seg" role="radiogroup" aria-label="Layout">
+        <label><input type="radio" name="view" id="view-tabs" value="tabs"><span>One test at a time</span></label>
+        <label><input type="radio" name="view" id="view-page" value="page"><span>All on one page</span></label>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Validity tests">
+    <button class="tab" role="tab" id="t-content" data-tab="content" aria-selected="true"><i class="dot" id="d-content"></i>Content</button>
+    <button class="tab" role="tab" id="t-construct" data-tab="construct" aria-selected="false"><i class="dot" id="d-construct"></i>Construct (convergent)</button>
+    <button class="tab" role="tab" id="t-discriminant" data-tab="discriminant" aria-selected="false"><i class="dot" id="d-discriminant"></i>Discriminant</button>
+    <button class="tab" role="tab" id="t-internal" data-tab="internal" aria-selected="false"><i class="dot" id="d-internal"></i>Internal</button>
+    <button class="tab" role="tab" id="t-external" data-tab="external" aria-selected="false"><i class="dot" id="d-external"></i>External</button>
+    <button class="tab" role="tab" id="t-report" data-tab="report" aria-selected="false">Report</button>
+  </nav>
+
+  <!-- CONTENT -->
+  <section class="panel" id="p-content" role="tabpanel" aria-labelledby="t-content">
+    <aside class="rail">
+      <h2>Content validity</h2>
+      <p class="q">Do the items cover the construct (or the objectives they were written for) fully and only, as judged by a panel of subject experts?</p>
+      <div class="formula" id="cFormula"></div>
+      <h4>Criteria</h4>
+      <ul id="cCriteria"></ul>
+      <p class="refs">Lynn (1986); Polit, Beck &amp; Owen (2007); Lawshe (1975); Ayre &amp; Scally (2014); Rovinelli &amp; Hambleton (1977).</p>
+    </aside>
+    <div class="work">
+      <div class="card">
+        <h3>Expert ratings</h3>
+        <p class="sub" id="cSub"></p>
+        <div class="toolbar">
+          <label class="fld" style="flex-direction:row;align-items:center;gap:8px">Method
+            <select id="cMode"><option value="cvi">Content Validity Index (relevance 1–4)</option><option value="cvr">Lawshe CVR (1–3, 3 = essential)</option><option value="ioc">Item-Objective Congruence (IOC, −1 / 0 / +1)</option></select>
+          </label>
+          <span class="sp"></span>
+          <button class="btn" id="cAddItem">Add item</button>
+          <button class="btn" id="cDelItem">Remove last item</button>
+          <button class="btn" id="cAddExp">Add expert</button>
+          <button class="btn" id="cDelExp">Remove last expert</button>
+          <button class="btn" id="cSample">Load example</button>
+        </div>
+        <div class="scroll"><div id="cGrid"></div></div>
+      </div>
+      <div class="card">
+        <h3>Results</h3>
+        <p class="sub" id="cResSub"></p>
+        <div class="stats" id="cStats" style="margin-bottom:16px"></div>
+        <div class="scroll" id="cTable"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONSTRUCT -->
+  <section class="panel" id="p-construct" role="tabpanel" aria-labelledby="t-construct" hidden>
+    <aside class="rail">
+      <h2>Construct validity: convergent</h2>
+      <p class="q">Do the items written for each construct hang together and measure one shared thing?</p>
+      <div class="formula">AVE = Σλ² ÷ k
+CR  = (Σλ)² ÷ [(Σλ)² + Σ(1 − λ²)]
+α   = k/(k−1) · (1 − Σσᵢ² ÷ σₓ²)</div>
+      <h4>Criteria</h4>
+      <ul>
+        <li>KMO ≥ .60 (≥ .80 meritorious); Bartlett’s test p &lt; .05</li>
+        <li>Loading λ ≥ .70; .40–.70 review; &lt; .40 drop</li>
+        <li>AVE ≥ .50</li>
+        <li>CR between .70 and .95</li>
+        <li>Cronbach’s α ≥ .70</li>
+        <li>Corrected item–total r ≥ .30</li>
+      </ul>
+      <p class="small muted">Loadings come from a one-factor principal axis factoring of each construct’s items. They are close to, but not the same as, CFA loadings; confirm with CFA or PLS-SEM before publishing.</p>
+      <p class="refs">Kaiser (1974); Fornell &amp; Larcker (1981); Hair, Black, Babin &amp; Anderson (2019); Nunnally &amp; Bernstein (1994).</p>
+    </aside>
+    <div class="work">
+      <div class="card" id="dataCard">
+        <h3>Survey data</h3>
+        <p class="sub">One row per respondent, one column per item, with a header row. Name items with a construct prefix and a number (PU1, PU2, VA1…) so they group automatically. ID columns and text columns are ignored; rows with missing values are dropped. Comma, semicolon or tab separated.</p>
+        <div class="toolbar">
+          <button class="btn primary" id="dSample">Load example data</button>
+          <label class="btn" for="dFile" style="display:inline-block">Open CSV file</label>
+          <input type="file" id="dFile" accept=".csv,.tsv,.txt,text/csv" hidden>
+          <button class="btn" id="dClear">Clear</button>
+          <span class="sp"></span>
+          <span class="small muted" id="dInfo"></span>
+        </div>
+        <textarea id="dataText" spellcheck="false" aria-label="Survey data as CSV"></textarea>
+      </div>
+      <div id="kResults"></div>
+    </div>
+  </section>
+
+  <!-- DISCRIMINANT -->
+  <section class="panel" id="p-discriminant" role="tabpanel" aria-labelledby="t-discriminant" hidden>
+    <aside class="rail">
+      <h2>Discriminant validity</h2>
+      <p class="q">Are the constructs empirically distinct from one another, or are two scales measuring the same thing?</p>
+      <div class="formula">Fornell–Larcker:  √AVEᵢ &gt; |rᵢⱼ|
+HTMTᵢⱼ = mean hetero-trait r
+        ÷ √(mono rᵢ · mono rⱼ)</div>
+      <h4>Criteria</h4>
+      <ul>
+        <li>√AVE of each construct exceeds its correlation with every other construct</li>
+        <li>HTMT &lt; .85 (strict), &lt; .90 (liberal)</li>
+        <li>Each item correlates most with its own construct (cross-loadings)</li>
+      </ul>
+      <p class="small muted">Uses the same survey dataset as the Construct test. Construct correlations are computed from mean item scores.</p>
+      <p class="refs">Fornell &amp; Larcker (1981); Henseler, Ringle &amp; Sarstedt (2015).</p>
+    </aside>
+    <div class="work" id="dWork"><div id="dResults" style="display:flex;flex-direction:column;gap:22px"></div></div>
+  </section>
+
+  <!-- INTERNAL -->
+  <section class="panel" id="p-internal" role="tabpanel" aria-labelledby="t-internal" hidden>
+    <aside class="rail">
+      <h2>Internal validity</h2>
+      <p class="q">Can the observed effect be attributed to the cause you studied, rather than to something else?</p>
+      <div class="formula">Score = Σ ratings ÷ (2 × applicable threats)
+addressed = 2 · partly = 1 · not = 0
+g = (M₁ − M₂) ÷ s_pooled · J</div>
+      <h4>Criteria</h4>
+      <ul>
+        <li>Score ≥ 75% and no applicable threat left unaddressed</li>
+        <li>Baseline difference |g| ≤ .05 equivalent; .05–.25 adjust statistically; &gt; .25 not equivalent</li>
+        <li>Attrition: report overall and differential rates; high differential attrition biases group comparisons</li>
+      </ul>
+      <p class="refs">Shadish, Cook &amp; Campbell (2002); What Works Clearinghouse Procedures and Standards Handbook, v5.0 (2022).</p>
+    </aside>
+    <div class="work">
+      <div class="card">
+        <div class="toolbar" style="margin-bottom:6px">
+          <h3>Threat review</h3><span class="sp"></span>
+          <label class="fld" style="flex-direction:row;align-items:center;gap:8px">Study design
+            <select id="iDesign">
+              <option value="rct">Randomised experiment</option>
+              <option value="quasi">Quasi-experiment (non-equivalent groups)</option>
+              <option value="prepost">Single-group pre/post</option>
+              <option value="cross">Cross-sectional / correlational survey</option>
+            </select>
+          </label>
+        </div>
+        <p class="sub">Rate how well your study rules out each threat. Threats that rarely apply to the chosen design start as N/A. <span class="example" id="iEx">Example ratings shown</span></p>
+        <div class="toolbar"><button class="btn" id="iReset">Clear all ratings</button><span class="sp"></span><span class="small" id="iScoreTxt"></span></div>
+        <div class="meter" aria-hidden="true"><i id="iMeter" style="width:0"></i></div>
+        <div class="threats" id="iThreats"></div>
+      </div>
+      <div class="card">
+        <h3>Evidence calculators</h3>
+        <p class="sub">For group comparisons. Leave blank if they don’t apply to your study.</p>
+        <div class="calc">
+          <div>
+            <h4>Attrition</h4>
+            <div class="row">
+              <label class="fld">Assigned, treatment<input type="number" id="aRT" min="0"></label>
+              <label class="fld">Analysed, treatment<input type="number" id="aAT" min="0"></label>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <label class="fld">Assigned, comparison<input type="number" id="aRC" min="0"></label>
+              <label class="fld">Analysed, comparison<input type="number" id="aAC" min="0"></label>
+            </div>
+            <div class="out" id="aOut"></div>
+          </div>
+          <div>
+            <h4>Baseline equivalence</h4>
+            <div class="row">
+              <label class="fld">Mean, treatment<input type="number" step="any" id="bM1"></label>
+              <label class="fld">SD<input type="number" step="any" id="bS1"></label>
+              <label class="fld">n<input type="number" id="bN1"></label>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <label class="fld">Mean, comparison<input type="number" step="any" id="bM2"></label>
+              <label class="fld">SD<input type="number" step="any" id="bS2"></label>
+              <label class="fld">n<input type="number" id="bN2"></label>
+            </div>
+            <div class="out" id="bOut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXTERNAL -->
+  <section class="panel" id="p-external" role="tabpanel" aria-labelledby="t-external" hidden>
+    <aside class="rail">
+      <h2>External validity</h2>
+      <p class="q">Will the findings hold for other people, settings, treatments and times beyond this study?</p>
+      <div class="formula">χ² = Σ (O − E)² ÷ E,  df = k − 1
+w  = √(χ² ÷ n)
+residual = (O − E) ÷ √E</div>
+      <h4>Criteria</h4>
+      <ul>
+        <li>Sample does not differ from the population: p ≥ .05 and Cohen’s w &lt; .30</li>
+        <li>No category with |standardised residual| &gt; 2</li>
+        <li>Expected count ≥ 5 in every category</li>
+        <li>Generalisability review score ≥ 75%</li>
+      </ul>
+      <p class="refs">Bracht &amp; Glass (1968); Shadish, Cook &amp; Campbell (2002); Cohen (1988).</p>
+    </aside>
+    <div class="work">
+      <div class="card">
+        <h3>Sample representativeness</h3>
+        <p class="sub">Compare your sample’s make-up with known population figures (enrolment records, census, industry data) on one characteristic. <span class="example" id="eEx">Example figures shown</span></p>
+        <div class="toolbar">
+          <label class="fld" style="flex-direction:row;align-items:center;gap:8px">Characteristic <input type="text" id="eAttr" style="width:180px"></label>
+          <span class="sp"></span>
+          <button class="btn" id="eAdd">Add category</button>
+          <button class="btn" id="eDel">Remove last</button>
+        </div>
+        <div class="scroll" id="eTable"></div>
+        <div class="stats" id="eStats" style="margin-top:16px"></div>
+      </div>
+      <div class="card">
+        <div class="toolbar" style="margin-bottom:6px"><h3>Generalisability review</h3><span class="sp"></span><button class="btn" id="eReset">Clear all ratings</button></div>
+        <p class="sub">Rate how well the study supports generalising beyond its own sample and setting.</p>
+        <div class="toolbar" style="margin-bottom:0"><span class="small" id="eScoreTxt"></span></div>
+        <div class="meter" aria-hidden="true"><i id="eMeter" style="width:0"></i></div>
+        <div class="threats" id="eThreats"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORT -->
+  <section class="panel" id="p-report" role="tabpanel" aria-labelledby="t-report" hidden style="grid-template-columns:minmax(0,1fr)">
+    <div class="work">
+      <div>
+        <h2 style="font:600 27px/1.15 var(--display);margin:0">Validity summary</h2>
+        <p class="muted" style="margin:6px 0 0;max-width:70ch">A verdict for each test, drawn from the current inputs on every tab. Copy the text version into your methods chapter or appendix and edit the wording to suit.</p>
+      </div>
+      <div class="rep-grid" id="repCards"></div>
+      <div class="card">
+        <div class="toolbar"><h3>Text summary</h3><span class="sp"></span><span class="small muted" id="copyMsg" aria-live="polite"></span><button class="btn primary" id="copyBtn">Copy text</button></div>
+        <pre id="repText"></pre>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------- pure statistics ---------- */
+function mean(a){let s=0;for(const x of a)s+=x;return s/a.length}
+function variance(a){const m=mean(a);let s=0;for(const x of a)s+=(x-m)*(x-m);return s/(a.length-1)}
+function corr(a,b){const ma=mean(a),mb=mean(b);let sab=0,saa=0,sbb=0;for(let i=0;i<a.length;i++){const da=a[i]-ma,db=b[i]-mb;sab+=da*db;saa+=da*da;sbb+=db*db}return sab/Math.sqrt(saa*sbb)}
+function corrMatrix(cols){const k=cols.length,R=[];for(let i=0;i<k;i++){R.push(new Array(k).fill(1))}for(let i=0;i<k;i++)for(let j=i+1;j<k;j++){R[i][j]=R[j][i]=corr(cols[i],cols[j])}return R}
+function invert(M){const n=M.length,A=M.map((r,i)=>r.concat(Array.from({length:n},(_,j)=>i===j?1:0)));
+  for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(A[r][c])>Math.abs(A[p][c]))p=r;if(Math.abs(A[p][c])<1e-12)return null;[A[c],A[p]]=[A[p],A[c]];const d=A[c][c];for(let j=0;j<2*n;j++)A[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=A[r][c];if(f)for(let j=0;j<2*n;j++)A[r][j]-=f*A[c][j]}}
+  return A.map(r=>r.slice(n))}
+function logDet(M){const n=M.length,A=M.map(r=>r.slice());let ld=0;for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(A[r][c])>Math.abs(A[p][c]))p=r;if(Math.abs(A[p][c])<1e-15)return -Infinity;[A[c],A[p]]=[A[p],A[c]];ld+=Math.log(Math.abs(A[c][c]));for(let r=c+1;r<n;r++){const f=A[r][c]/A[c][c];for(let j=c;j<n;j++)A[r][j]-=f*A[c][j]}}return ld}
+function powerEig(M){const n=M.length;let v=new Array(n).fill(1/Math.sqrt(n)),lam=0;for(let it=0;it<1000;it++){const w=M.map(r=>r.reduce((s,x,j)=>s+x*v[j],0));const nr=Math.hypot(...w);if(!nr)break;const nv=w.map(x=>x/nr);const diff=nv.reduce((s,x,i)=>s+Math.abs(x-v[i]),0);v=nv;lam=nr;if(diff<1e-10)break}
+  lam=v.reduce((s,x,i)=>s+x*M[i].reduce((t,y,j)=>t+y*v[j],0),0);return{lam,v}}
+/* one-factor principal axis factoring; returns standardised loadings */
+function paf(R){const k=R.length;if(k===1)return[1];if(k===2){const l=Math.sqrt(Math.max(Math.abs(R[0][1]),0));return[l,l]}
+  const inv=invert(R);let h=R.map((r,i)=>inv?Math.min(.995,Math.max(.005,1-1/inv[i][i])):Math.max(...r.filter((_,j)=>j!==i).map(Math.abs)));let l=h.map(Math.sqrt);
+  for(let it=0;it<300;it++){const Rs=R.map((r,i)=>r.map((x,j)=>i===j?h[i]:x));const{lam,v}=powerEig(Rs);l=v.map(x=>x*Math.sqrt(Math.max(lam,0)));const nh=l.map(x=>Math.min(.995,x*x));const d=Math.max(...nh.map((x,i)=>Math.abs(x-h[i])));h=nh;if(d<1e-7)break}
+  if(l.reduce((s,x)=>s+x,0)<0)l=l.map(x=>-x);return l}
+function cronbach(cols){const k=cols.length;if(k<2)return NaN;const n=cols[0].length;const tot=new Array(n).fill(0);cols.forEach(c=>c.forEach((x,i)=>tot[i]+=x));const sv=cols.reduce((s,c)=>s+variance(c),0);return k/(k-1)*(1-sv/variance(tot))}
+function lgamma(z){const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];if(z<0.5)return Math.log(Math.PI/Math.abs(Math.sin(Math.PI*z)))-lgamma(1-z);z-=1;let x=c[0];for(let i=1;i<9;i++)x+=c[i]/(z+i);const t=z+7.5;return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x)}
+function gammaQ(a,x){if(x<=0)return 1;const lp=-x+a*Math.log(x)-lgamma(a);if(x<a+1){let ap=a,sum=1/a,del=sum;for(let n=0;n<1000;n++){ap++;del*=x/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-15)break}return Math.max(0,1-sum*Math.exp(lp))}
+  let b=x+1-a,c=1e300,d=1/b,h=d;for(let i=1;i<1000;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-15)break}return Math.exp(lp)*h}
+function chiP(chi,df){return gammaQ(df/2,chi/2)}
+function choose(n,k){return Math.exp(lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1))}
+/* Ayre & Scally (2014): exact one-tailed binomial critical CVR at alpha .05 */
+function cvrCritical(N){if(N<1)return null;for(let ne=Math.ceil(N/2);ne<=N;ne++){let p=0;for(let k=ne;k<=N;k++)p+=choose(N,k)*Math.pow(.5,N);if(p<.05)return{ne,cvr:(ne-N/2)/(N/2)}}return null}
+function kmo(R){const inv=invert(R);if(!inv)return NaN;const k=R.length;let r2=0,a2=0;for(let i=0;i<k;i++)for(let j=0;j<k;j++){if(i===j)continue;r2+=R[i][j]**2;a2+=(inv[i][j]/Math.sqrt(inv[i][i]*inv[j][j]))**2}return r2/(r2+a2)}
+function bartlett(R,n){const p=R.length,ld=logDet(R);if(!isFinite(ld))return null;const chi=-((n-1)-(2*p+5)/6)*ld,df=p*(p-1)/2;return{chi,df,p:chiP(chi,df)}}
+function hedgesG(m1,s1,n1,m2,s2,n2){const sp=Math.sqrt(((n1-1)*s1*s1+(n2-1)*s2*s2)/(n1+n2-2));const J=1-3/(4*(n1+n2)-9);return(m1-m2)/sp*J}
+</script>
+
+<script>
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const apa=(x,d=2)=>(x==null||!isFinite(x))?"—":x.toFixed(d).replace(/^(-?)0\./,"$1.");
+const fx=(x,d=2)=>(x==null||!isFinite(x))?"—":x.toFixed(d);
+const pct=(x,d=1)=>(x==null||!isFinite(x))?"—":(x*100).toFixed(d)+"%";
+const pf=p=>!isFinite(p)?"—":(p<.001?"< .001":"= "+apa(p,3));
+const chip=(s,t)=>`<span class="chip ${s}">${esc(t)}</span>`;
+const rank={good:0,na:0,warn:1,bad:2};
+const worst=a=>a.reduce((w,s)=>rank[s]>rank[w]?s:w,"good");
+const stat=(s,k,v,t)=>`<div class="stat ${s||""}"><div class="k">${k}</div><div class="v">${v}</div>${t?`<div class="t">${t}</div>`:""}</div>`;
+
+/* ---------- example data ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function sampleCSV(){const r=mulberry32(20261015);const g=()=>{let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*r())};
+  const spec=[["PU",[.82,.78,.76,.71],0],["VA",[.80,.77,.72,.45],1],["IU",[.85,.81,.77],2]];
+  const head=["id"];spec.forEach(([p,ls])=>ls.forEach((_,i)=>head.push(p+(i+1))));const lines=[head.join(",")];
+  for(let n=1;n<=150;n++){const z=[g(),g(),g()];const F=[z[0],.45*z[0]+.893*z[1],.55*z[0]+.1708*z[1]+.8175*z[2]];const row=["R"+String(n).padStart(3,"0")];
+    spec.forEach(([p,ls,f])=>ls.forEach(l=>{const x=l*F[f]+Math.sqrt(1-l*l)*g();row.push(Math.min(7,Math.max(1,Math.round(4.2+1.35*x))))}));lines.push(row.join(","))}
+  return lines.join("\n")}
+const CVI_SAMPLE=[
+  ["The arrow direction is easy to interpret",[4,4,3,4,4,3]],
+  ["Text is readable from five metres away",[4,3,4,4,3,4]],
+  ["Colour coding helps me find my route",[3,4,4,3,4,4]],
+  ["Pictograms are understandable without text",[4,4,3,2,4,3]],
+  ["I notice the sign before I need it",[3,3,4,4,4,3]],
+  ["The sign blends with the interior finishes",[2,3,2,3,1,2]],
+  ["I trust the information on the sign",[4,3,3,4,3,2]],
+  ["The sign material looks durable",[3,2,2,3,2,3]]];
+
+const IOC_SAMPLE=[
+  ["The arrow direction is easy to interpret","Direction finding",[1,1,1,0,1]],
+  ["Text is readable from five metres away","Legibility",[1,1,1,1,1]],
+  ["Colour coding helps me find my route","Direction finding",[1,0,1,1,0]],
+  ["Pictograms are understandable without text","Legibility",[0,1,0,1,-1]],
+  ["I notice the sign before I need it","Visibility",[1,1,0,1,1]],
+  ["The sign blends with the interior finishes","Visibility",[-1,0,-1,0,-1]],
+  ["I trust the information on the sign","Credibility",[1,0,1,1,1]],
+  ["The sign material looks durable","Credibility",[0,-1,0,1,-1]]];
+const RANGE={cvi:[1,4],cvr:[1,3],ioc:[-1,1]};
+const MODEMAP={"cvi>cvr":{4:3,3:2,2:1,1:1},"cvr>cvi":{3:4,2:3,1:1},"cvi>ioc":{4:1,3:1,2:0,1:-1},"ioc>cvi":{1:4,0:2,"-1":1},"cvr>ioc":{3:1,2:0,1:-1},"ioc>cvr":{1:3,0:2,"-1":1}};
+const isRating=(v,m)=>Number.isInteger(v)&&v>=RANGE[m][0]&&v<=RANGE[m][1];
+const loadContentSample=m=>{const c=state.content;if(m==="ioc"){c.experts=5;c.items=IOC_SAMPLE.map(([name,obj,r])=>({name,obj,r:r.slice()}))}else{c.experts=6;c.items=CVI_SAMPLE.map(([name,r])=>({name,obj:"",r:m==="cvi"?r.slice():r.map(v=>MODEMAP["cvi>cvr"][v])}))}};
+/* ---------- state ---------- */
+const state={
+  content:{mode:"cvi",experts:6,items:CVI_SAMPLE.map(([name,r])=>({name,r:r.slice()}))},
+  data:{text:"",res:null},
+  internal:{design:"quasi",ratings:{},notes:{},example:true},
+  external:{ratings:{},notes:{},example:true,attr:"Year of study",rows:[["Year 1",52,30],["Year 2",41,27],["Year 3",30,24],["Year 4",17,19]]}
+};
+
+/* ---------- CONTENT ---------- */
+function contentResults(){const c=state.content,N=c.experts;const out={N,mode:c.mode,items:[],invalid:0};
+  c.items.forEach(it=>{const rs=[];for(let e=0;e<N;e++){const v=it.r[e];if(isRating(v,c.mode))rs.push(v);else if(v!=null&&v!=="")out.invalid++}
+    const n=rs.length;if(c.mode==="ioc"){const sum=rs.reduce((a,b)=>a+b,0);const ioc=n?sum/n:NaN;let s,lab;
+      if(!n){s="na";lab="No ratings"}else if(ioc>=.5-1e-9){s="good";lab="Retain"}else if(ioc>=0){s="warn";lab="Revise"}else{s="bad";lab="Remove"}
+      out.items.push({name:it.name,obj:it.obj||"",n,sum,ioc,pos:rs.filter(v=>v===1).length,neg:rs.filter(v=>v===-1).length,s,lab})}
+    else if(c.mode==="cvi"){const A=rs.filter(v=>v>=3).length;const icvi=n?A/n:NaN;const pc=choose(n,A)*Math.pow(.5,n);const k=(icvi-pc)/(1-pc);
+      const crit=n<=5?1:.78;let s,lab;if(!n){s="na";lab="No ratings"}else if(icvi>=crit-1e-9){s="good";lab="Retain"}else if(icvi>=.70){s="warn";lab="Revise"}else{s="bad";lab="Remove"}
+      const kl=!isFinite(k)?"—":k>.74?"Excellent":k>=.60?"Good":k>=.40?"Fair":"Poor";out.items.push({name:it.name,n,A,icvi,k,kl,crit,s,lab})}
+    else{const ne=rs.filter(v=>v===3).length;const cvr=n?(ne-n/2)/(n/2):NaN;const cr=cvrCritical(n);let s,lab;
+      if(!n){s="na";lab="No ratings"}else if(!cr){s="warn";lab="Too few experts"}else if(cvr>=cr.cvr-1e-9){s="good";lab="Retain"}else if(cvr>0){s="warn";lab="Revise"}else{s="bad";lab="Remove"}
+      out.items.push({name:it.name,n,ne,cvr,crit:cr?cr.cvr:NaN,s,lab})}});
+  const rated=out.items.filter(i=>i.n);
+  if(c.mode==="ioc"){out.meanIoc=rated.length?mean(rated.map(i=>i.ioc)):NaN;const kept=rated.filter(i=>i.s==="good");out.meanKept=kept.length?mean(kept.map(i=>i.ioc)):NaN}
+  else if(c.mode==="cvi"){out.ave=rated.length?mean(rated.map(i=>i.icvi)):NaN;out.ua=rated.length?rated.filter(i=>i.A===i.n).length/rated.length:NaN;
+    const kept=rated.filter(i=>i.s==="good");out.aveKept=kept.length?mean(kept.map(i=>i.icvi)):NaN}
+  else{const kept=rated.filter(i=>i.s==="good");out.cvi=kept.length?mean(kept.map(i=>i.cvr)):NaN;out.meanCvr=rated.length?mean(rated.map(i=>i.cvr)):NaN;out.critObj=cvrCritical(N)}
+  out.retain=rated.filter(i=>i.s==="good").length;out.total=c.items.length;return out}
+function renderContentStatic(){const c=state.content;
+  $("#cFormula").textContent=c.mode==="ioc"?"IOC = ΣR ÷ N\nR   = +1 congruent with objective\n       0 unsure\n      −1 not congruent\nN   = number of experts":c.mode==="cvi"?"I-CVI = experts rating 3 or 4 ÷ N\nκ*    = (I-CVI − Pc) ÷ (1 − Pc)\nPc    = C(N, A) · 0.5ᴺ\nS-CVI/Ave = mean of I-CVIs":"CVR = (nₑ − N/2) ÷ (N/2)\nnₑ  = experts rating “essential”\nCVR_crit: exact binomial,\n          one-tailed p < .05";
+  $("#cCriteria").innerHTML=c.mode==="ioc"?"<li>IOC ≥ .50: item matches its objective; retain</li><li>IOC 0 to .49: revise the item or its objective, then re-rate</li><li>IOC below 0: most experts see no match; remove</li><li>Panel of at least 3 experts; an odd number avoids ties</li><li>Each item must be linked to one stated objective</li>":c.mode==="cvi"?"<li>I-CVI = 1.00 with 3–5 experts; ≥ .78 with 6 or more</li><li>I-CVI .70–.78 revise; below .70 remove</li><li>Modified κ* &gt; .74 excellent, .60–.74 good, .40–.59 fair</li><li>S-CVI/Ave ≥ .90; S-CVI/UA ≥ .80</li><li>Panel of 3–10 experts</li>":"<li>Retain items with CVR ≥ critical value for your panel size</li><li>Critical value uses the exact binomial test (Ayre &amp; Scally), not Lawshe’s original table</li><li>At least 5 experts are needed to reach significance</li><li>CVI = mean CVR of retained items</li>";
+  $("#cSub").innerHTML=c.mode==="ioc"?"Write the objective each item is meant to measure, then each expert rates whether the item matches it: <b>+1</b> congruent · <b>0</b> unsure · <b>−1</b> not congruent. Choose <b>Load example</b> for a worked example with objectives filled in.":c.mode==="cvi"?"Each expert rates every item’s relevance: <b>1</b> not relevant · <b>2</b> somewhat · <b>3</b> quite · <b>4</b> highly relevant. Example: a wayfinding signage questionnaire reviewed by six experts.":"Each expert rates every item: <b>1</b> not necessary · <b>2</b> useful but not essential · <b>3</b> essential.";
+  $("#cMode").value=c.mode;
+  const[min,max]=RANGE[c.mode],ioc=c.mode==="ioc";let h='<table class="grid"><thead><tr><th class="itemcol">Item</th>'+(ioc?'<th class="itemcol">Objective</th>':"");for(let e=0;e<c.experts;e++)h+=`<th scope="col">E${e+1}</th>`;h+="</tr></thead><tbody>";
+  c.items.forEach((it,i)=>{h+=`<tr><td><input type="text" class="iname" id="cn-${i}" data-i="${i}" value="${esc(it.name)}" aria-label="Item ${i+1} wording"></td>`+(ioc?`<td><input type="text" class="iobj" id="co-${i}" data-i="${i}" value="${esc(it.obj||"")}" placeholder="Objective" style="width:150px" aria-label="Item ${i+1} objective"></td>`:"");
+    for(let e=0;e<c.experts;e++){const v=it.r[e];h+=`<td><input class="rate" type="number" inputmode="numeric" id="cr-${i}-${e}" min="${min}" max="${max}" step="1" data-i="${i}" data-e="${e}" value="${v==null?"":v}" aria-label="Item ${i+1}, expert ${e+1}"></td>`}h+="</tr>"});
+  $("#cGrid").innerHTML=h+"</tbody></table>";markInvalid()}
+function markInvalid(){const m=state.content.mode;document.querySelectorAll("#cGrid input.rate").forEach(inp=>{const v=inp.value.trim();inp.classList.toggle("invalid",v!==""&&!(/^[-−]?\d+$/.test(v)&&isRating(+v.replace("−","-"),m)))})}
+function renderContentResults(){const R=contentResults();let h="",st="";
+  if(R.mode==="ioc"){const ms=!isFinite(R.meanIoc)?"na":R.meanIoc>=.5?(R.retain===R.total?"good":"warn"):"bad";
+    st=stat(ms,"Mean IOC",apa(R.meanIoc),"all items")+stat(R.retain===R.total?"good":"warn","Items retained",`${R.retain} / ${R.total}`,"IOC ≥ .50")+stat(R.N<3?"bad":R.N%2?"good":"warn","Experts",R.N,R.N<3?"minimum is 3":R.N%2?"":"even number: ties possible")+(isFinite(R.meanKept)&&R.retain<R.total?stat("","Mean IOC, retained",apa(R.meanKept),"after removing flagged items"):"");
+    h='<table class="data"><thead><tr><th>#</th><th>Item</th><th>Objective</th><th class="n">+1 / −1</th><th class="n">ΣR</th><th class="n">IOC</th><th>Decision</th></tr></thead><tbody>';
+    R.items.forEach((it,i)=>{h+=`<tr><td class="lab">${i+1}</td><td>${esc(it.name)}</td><td class="muted">${esc(it.obj)||"—"}</td><td class="n">${it.pos} / ${it.neg}</td><td class="n">${it.sum>0?"+":""}${it.sum}</td><td class="n">${fx(it.ioc)}</td><td>${chip(it.s,it.lab)}</td></tr>`});
+    $("#cResSub").textContent="Retain items with IOC ≥ .50 (Rovinelli & Hambleton, 1977).";}
+  else if(R.mode==="cvi"){
+    const aveS=!isFinite(R.ave)?"na":R.ave>=.9?"good":R.ave>=.8?"warn":"bad";const uaS=!isFinite(R.ua)?"na":R.ua>=.8?"good":R.ua>=.6?"warn":"bad";
+    st=stat(aveS,"S-CVI/Ave",apa(R.ave),"target ≥ .90")+stat(uaS,"S-CVI/UA",apa(R.ua),"target ≥ .80")+stat(R.retain===R.total?"good":"warn","Items retained",`${R.retain} / ${R.total}`,"")+stat(R.N<3?"bad":R.N>10?"warn":"good","Experts",R.N,R.N<3?"minimum is 3":"3–10 recommended")+(isFinite(R.aveKept)&&R.retain<R.total?stat("","S-CVI/Ave, retained",apa(R.aveKept),"after removing flagged items"):"");
+    h='<table class="data"><thead><tr><th>#</th><th>Item</th><th class="n">Relevant</th><th class="n">I-CVI</th><th class="n">κ*</th><th>κ* rating</th><th>Decision</th></tr></thead><tbody>';
+    R.items.forEach((it,i)=>{h+=`<tr><td class="lab">${i+1}</td><td>${esc(it.name)}</td><td class="n">${it.A??0}/${it.n}</td><td class="n">${apa(it.icvi)}</td><td class="n">${apa(it.k)}</td><td>${it.kl}</td><td>${chip(it.s,it.lab)}</td></tr>`});
+    $("#cResSub").textContent=`I-CVI threshold for ${R.N} experts: ${R.N<=5?"1.00 (all must agree)":".78"}.`}
+  else{const cr=R.critObj;
+    st=stat(!isFinite(R.cvi)?"na":R.retain===R.total?"good":"warn","CVI (retained)",apa(R.cvi),"mean CVR of kept items")+stat("","CVR critical",cr?apa(cr.cvr):"—",cr?`nₑ ≥ ${cr.ne} of ${R.N}`:"needs ≥ 5 experts")+stat(R.retain===R.total?"good":"warn","Items retained",`${R.retain} / ${R.total}`,"")+stat(R.N<5?"bad":"good","Experts",R.N,R.N<5?"too few for significance":"");
+    h='<table class="data"><thead><tr><th>#</th><th>Item</th><th class="n">Essential</th><th class="n">CVR</th><th class="n">Critical</th><th>Decision</th></tr></thead><tbody>';
+    R.items.forEach((it,i)=>{h+=`<tr><td class="lab">${i+1}</td><td>${esc(it.name)}</td><td class="n">${it.ne}/${it.n}</td><td class="n">${apa(it.cvr)}</td><td class="n">${apa(it.crit)}</td><td>${chip(it.s,it.lab)}</td></tr>`});
+    $("#cResSub").textContent="Critical values from the exact one-tailed binomial test at α = .05."}
+  $("#cStats").innerHTML=st;$("#cTable").innerHTML=(R.invalid?`<p class="msg bad">${R.invalid} rating${R.invalid>1?"s are":" is"} outside the ${RANGE[R.mode][0]} to ${RANGE[R.mode][1]} scale and ${R.invalid>1?"were":"was"} ignored. Fix the cells outlined in red.</p>`:"")+h+"</tbody></table>";updateDots()}
+function vContent(){const R=contentResults();if(!R.items.some(i=>i.n))return{s:"na",head:"No ratings entered",lines:[]};
+  const flagged=R.items.filter(i=>i.n&&i.s!=="good");const lines=[];let s;
+  if(R.mode==="ioc"){s=R.meanIoc>=.5&&!flagged.length?"good":R.meanIoc>=.5?"warn":"bad";lines.push(`Item-Objective Congruence: mean IOC = ${fx(R.meanIoc)} (${R.N} experts, ${R.total} items); retain criterion IOC ≥ .50.`)}
+  else if(R.mode==="cvi"){s=R.ave>=.9&&!flagged.length?"good":R.ave>=.8?"warn":"bad";lines.push(`S-CVI/Ave = ${apa(R.ave)}, S-CVI/UA = ${apa(R.ua)} (${R.N} experts, ${R.total} items).`)}
+  else{s=!flagged.length?"good":flagged.length<=R.total/3?"warn":"bad";lines.push(`CVI (mean CVR of retained items) = ${apa(R.cvi)}; critical CVR for ${R.N} experts = ${R.critObj?apa(R.critObj.cvr):"n/a"}.`)}
+  if(flagged.length)lines.push(`Flagged: ${flagged.map(i=>`“${i.name}” (${i.lab.toLowerCase()}, ${R.mode==="ioc"?"IOC "+fx(i.ioc):R.mode==="cvi"?"I-CVI "+apa(i.icvi):"CVR "+apa(i.cvr)})`).join("; ")}.`);
+  else lines.push("All items meet the item-level criterion.");
+  return{s,head:`${R.retain} of ${R.total} items retained`,lines}}
+
+/* ---------- DATA / CONSTRUCT ---------- */
+function analyze(text){const out={errors:[],warnings:[]};const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<4){out.errors.push("Paste a header row and at least three respondent rows, or load the example data.");return out}
+  const hdr=lines[0];const delim=hdr.includes("\t")?"\t":(hdr.split(";").length>hdr.split(",").length?";":",");
+  const clean=s=>s.trim().replace(/^"(.*)"$/,"$1");const names=hdr.split(delim).map(clean);
+  const raw=lines.slice(1).map(l=>l.split(delim).map(s=>{const t=clean(s);return t===""?NaN:Number(t)}));
+  const cols=[];names.forEach((nm,j)=>{if(/^(id|respondent|participant|case|resp|timestamp)/i.test(nm))return;const ok=raw.filter(r=>isFinite(r[j])).length;if(ok>=raw.length*.8)cols.push(j)});
+  const rows=raw.filter(r=>cols.every(j=>isFinite(r[j])));out.dropped=raw.length-rows.length;out.n=rows.length;
+  let items=cols.map(j=>({name:names[j],v:rows.map(r=>r[j])}));const zero=items.filter(it=>variance(it.v)===0);if(zero.length)out.warnings.push(`Removed ${zero.map(z=>z.name).join(", ")}: every respondent gave the same answer.`);
+  items=items.filter(it=>variance(it.v)>0);
+  if(items.length<2||out.n<3){out.errors.push("Need at least two numeric item columns with variation and three complete rows.");return out}
+  const prefix=nm=>nm.replace(/[\s_.\-]*\d+[a-z]?$/i,"")||nm;const gmap=new Map();items.forEach((it,i)=>{const p=prefix(it.name);it.g=p;if(!gmap.has(p))gmap.set(p,[]);gmap.get(p).push(i)});
+  out.items=items;out.p=items.length;out.R=corrMatrix(items.map(i=>i.v));
+  if(out.n<5*out.p)out.warnings.push(`${out.n} respondents for ${out.p} items. A common minimum is 5 respondents per item (${5*out.p}).`);
+  if(out.n>out.p){out.kmo=kmo(out.R);out.bart=bartlett(out.R,out.n)}else out.warnings.push("More items than respondents: KMO and Bartlett’s test cannot be computed.");
+  out.groups=[];gmap.forEach((idx,name)=>{const g={name,idx,k:idx.length};const cs=idx.map(i=>items[i].v);
+    g.score=rows.map((_,r)=>mean(idx.map(i=>items[i].v[r])));
+    if(g.k>=2){const Rs=idx.map(a=>idx.map(b=>out.R[a][b]));g.load=paf(Rs);g.alpha=cronbach(cs);
+      g.ave=mean(g.load.map(l=>l*l));const sl=g.load.reduce((s,l)=>s+l,0);g.cr=sl*sl/(sl*sl+g.load.reduce((s,l)=>s+(1-l*l),0));
+      g.itc=idx.map((i,a)=>{const rest=rows.map((_,r)=>idx.reduce((s,j)=>j===i?s:s+items[j].v[r],0));return corr(items[i].v,rest)});
+      g.aid=idx.map((i,a)=>g.k>2?cronbach(cs.filter((_,b)=>b!==a)):NaN);
+      g.mono=(()=>{let s=0,c=0;for(let a=0;a<g.k;a++)for(let b=a+1;b<g.k;b++){s+=Math.abs(out.R[idx[a]][idx[b]]);c++}return s/c})()}
+    out.groups.push(g)});
+  out.single=out.groups.filter(g=>g.k<2).map(g=>g.name);
+  const G=out.groups;out.C=G.map(a=>G.map(b=>a===b?1:corr(a.score,b.score)));
+  out.htmt=G.map((a,i)=>G.map((b,j)=>{if(i===j||a.k<2||b.k<2)return NaN;let s=0,c=0;a.idx.forEach(x=>b.idx.forEach(y=>{s+=Math.abs(out.R[x][y]);c++}));return(s/c)/Math.sqrt(a.mono*b.mono)}));
+  out.cross=items.map(it=>G.map(g=>corr(it.v,g.score)));
+  return out}
+const sLoad=l=>l>=.70?"good":l>=.40?"warn":"bad";
+const sAlpha=a=>!isFinite(a)?"na":a>=.70?"good":a>=.60?"warn":"bad";
+const sCR=c=>!isFinite(c)?"na":c>.95?"warn":c>=.70?"good":c>=.60?"warn":"bad";
+const sAVE=a=>!isFinite(a)?"na":a>=.50?"good":a>=.40?"warn":"bad";
+const sKMO=k=>!isFinite(k)?"na":k>=.80?"good":k>=.60?"warn":"bad";
+const kmoLabel=k=>k>=.9?"marvellous":k>=.8?"meritorious":k>=.7?"middling":k>=.6?"mediocre":k>=.5?"miserable":"unacceptable";
+function msgs(res){return res.errors.map(e=>`<p class="msg bad">${esc(e)}</p>`).join("")+res.warnings.map(w=>`<p class="msg warn">${esc(w)}</p>`).join("")}
+function renderConstruct(){const res=state.data.res;const box=$("#kResults");
+  if(!res||res.errors.length){box.innerHTML=`<div class="card">${res?msgs(res):""}</div>`;$("#dInfo").textContent="";renderDisc();updateDots();return}
+  $("#dInfo").textContent=`${res.n} complete responses · ${res.p} items · ${res.groups.length} constructs${res.dropped?` · ${res.dropped} incomplete rows dropped`:""}`;
+  const b=res.bart;let h=`<div class="card"><h3>Sampling adequacy</h3><p class="sub">Is the data suitable for factor analysis at all?</p>${msgs(res)}<div class="stats">`+
+    stat(sKMO(res.kmo),"KMO",apa(res.kmo),isFinite(res.kmo)?kmoLabel(res.kmo):"not computable")+
+    stat(b?(b.p<.05?"good":"bad"):"na","Bartlett χ²",b?fx(b.chi,1):"—",b?`df = ${b.df}, p ${pf(b.p)}`:"not computable")+
+    stat("","Respondents",res.n,`${apa(res.n/res.p,1).replace(/^\./,"0.")} per item`)+`</div></div>`;
+  h+=`<div class="card"><h3>Construct reliability and convergence</h3><p class="sub">Constructs grouped by item-name prefix.${res.single.length?` Single-item constructs (${esc(res.single.join(", "))}) cannot be tested here.`:""}</p><div class="scroll"><table class="data"><thead><tr><th>Construct</th><th class="n">Items</th><th class="n">α</th><th class="n">CR</th><th class="n">AVE</th><th class="n">√AVE</th><th>Verdict</th></tr></thead><tbody>`;
+  res.groups.filter(g=>g.k>=2).forEach(g=>{const s=worst([sAlpha(g.alpha),sCR(g.cr),sAVE(g.ave)]);const why=[];if(sAVE(g.ave)!=="good")why.push("AVE");if(sCR(g.cr)!=="good")why.push(g.cr>.95?"CR (redundant items?)":"CR");if(sAlpha(g.alpha)!=="good")why.push("α");
+    h+=`<tr><td class="lab">${esc(g.name)}</td><td class="n">${g.k}</td><td class="n ${sAlpha(g.alpha)}-c">${apa(g.alpha)}</td><td class="n ${sCR(g.cr)}-c">${apa(g.cr)}</td><td class="n ${sAVE(g.ave)}-c">${apa(g.ave)}</td><td class="n">${apa(Math.sqrt(g.ave))}</td><td>${chip(s,s==="good"?"Convergent":"Check "+why.join(", "))}</td></tr>`});
+  h+=`</tbody></table></div></div>`;
+  h+=`<div class="card"><h3>Item diagnostics</h3><p class="sub">Items to consider dropping are flagged. Re-run after removing a column to see the effect on AVE and α.</p><div class="scroll"><table class="data"><thead><tr><th>Item</th><th>Construct</th><th class="n">λ</th><th class="n">λ²</th><th class="n">Item–total r</th><th class="n">α if deleted</th><th>Verdict</th></tr></thead><tbody>`;
+  res.groups.filter(g=>g.k>=2).forEach(g=>g.idx.forEach((i,a)=>{const l=g.load[a],itc=g.itc[a],aid=g.aid[a];let s=sLoad(l),lab=s==="good"?"Keep":s==="warn"?"Review":"Drop";if(itc<.3&&s==="good"){s="warn";lab="Review"}
+    const raises=isFinite(aid)&&aid>g.alpha+.005;h+=`<tr><td class="lab">${esc(res.items[i].name)}</td><td class="lab">${esc(g.name)}</td><td class="n ${sLoad(l)}-c">${apa(l)}</td><td class="n">${apa(l*l)}</td><td class="n ${itc<.3?"bad-c":""}">${apa(itc)}</td><td class="n ${raises?"warn-c":""}">${apa(aid)}</td><td>${chip(s,lab)}${raises?' <span class="small muted">raises α</span>':""}</td></tr>`}));
+  box.innerHTML=h+`</tbody></table></div></div>`;renderDisc();updateDots()}
+function vConstruct(){const res=state.data.res;if(!res||res.errors.length)return{s:"na",head:"No usable data",lines:[]};const gs=res.groups.filter(g=>g.k>=2);if(!gs.length)return{s:"na",head:"No multi-item constructs",lines:[]};
+  const ss=gs.map(g=>worst([sAlpha(g.alpha),sCR(g.cr),sAVE(g.ave)]));const s=worst(ss.concat([sKMO(res.kmo)==="bad"?"bad":"good",res.bart&&res.bart.p>=.05?"bad":"good"]));
+  const lines=[`n = ${res.n}; KMO = ${apa(res.kmo)}${res.bart?`; Bartlett’s χ²(${res.bart.df}) = ${fx(res.bart.chi,1)}, p ${pf(res.bart.p)}`:""}.`];
+  gs.forEach(g=>lines.push(`${g.name} (${g.k} items): α = ${apa(g.alpha)}, CR = ${apa(g.cr)}, AVE = ${apa(g.ave)}.`));
+  const weak=[];gs.forEach(g=>g.idx.forEach((i,a)=>{if(g.load[a]<.7)weak.push(`${res.items[i].name} (λ = ${apa(g.load[a])})`)}));if(weak.length)lines.push(`Loadings below .70: ${weak.join(", ")}.`);
+  const ok=ss.filter(x=>x==="good").length;return{s,head:`${ok} of ${gs.length} constructs convergent`,lines}}
+
+/* ---------- DISCRIMINANT ---------- */
+function renderDisc(){const res=state.data.res;const box=$("#dResults");
+  if(!res||res.errors.length){box.innerHTML=`<div class="card"><p class="msg info">Add survey data above to test discriminant validity.</p></div>`;return}
+  const G=res.groups;if(G.length<2){box.innerHTML=`<div class="card"><p class="msg warn">Only one construct was found. Discriminant validity needs two or more. Check that items are named with different prefixes (for example PU1, VA1).</p></div>`;return}
+  const nm=G.map(g=>`<th class="n">${esc(g.name)}</th>`).join("");
+  let fl=`<div class="card"><h3>Fornell–Larcker criterion</h3><p class="sub">Diagonal: √AVE. Below: correlation between construct scores. A shaded red cell means two constructs share more variance with each other than with their own items.</p><div class="scroll"><table class="data"><thead><tr><th></th>${nm}</tr></thead><tbody>`;
+  G.forEach((a,i)=>{fl+=`<tr><td class="lab">${esc(a.name)}</td>`;G.forEach((b,j)=>{if(j>i)fl+="<td></td>";else if(i===j)fl+=`<td class="n diag">${a.k>=2?apa(Math.sqrt(a.ave)):"—"}</td>`;else{const r=res.C[i][j];const lim=Math.min(a.k>=2?Math.sqrt(a.ave):Infinity,b.k>=2?Math.sqrt(b.ave):Infinity);const bad=Math.abs(r)>=lim;fl+=`<td class="n ${bad?"bad-c":""}">${apa(r)}</td>`}});fl+="</tr>"});
+  fl+=`</tbody></table></div></div>`;
+  let ht=`<div class="card"><h3>Heterotrait–monotrait ratio (HTMT)</h3><p class="sub">Values below .85 indicate distinct constructs; .85–.90 is acceptable only for conceptually similar constructs.</p><div class="scroll"><table class="data"><thead><tr><th></th>${nm}</tr></thead><tbody>`;
+  G.forEach((a,i)=>{ht+=`<tr><td class="lab">${esc(a.name)}</td>`;G.forEach((b,j)=>{if(j>=i)ht+="<td></td>";else{const v=res.htmt[i][j];const c=!isFinite(v)?"":v>=.9?"bad-c":v>=.85?"warn-c":"good-c";ht+=`<td class="n ${c}">${apa(v)}</td>`}});ht+="</tr>"});
+  ht+=`</tbody></table></div></div>`;
+  let cl=`<div class="card"><h3>Cross-loadings</h3><p class="sub">Correlation of each item with every construct score. The item’s own construct (shaded) should be the highest in its row.</p><div class="scroll"><table class="data"><thead><tr><th>Item</th>${nm}<th>Verdict</th></tr></thead><tbody>`;
+  res.items.forEach((it,i)=>{const own=G.findIndex(g=>g.name===it.g);const row=res.cross[i];const other=Math.max(...row.filter((_,j)=>j!==own).map(Math.abs));const gap=Math.abs(row[own])-other;const s=gap>=.1?"good":gap>0?"warn":"bad";
+    cl+=`<tr><td class="lab">${esc(it.name)}</td>`+row.map((v,j)=>`<td class="n ${j===own?"diag":""}">${apa(v)}</td>`).join("")+`<td>${chip(s,s==="good"?"Distinct":s==="warn"?"Close":"Loads elsewhere")}</td></tr>`});
+  cl+=`</tbody></table></div></div>`;box.innerHTML=fl+ht+cl}
+function vDisc(){const res=state.data.res;if(!res||res.errors.length)return{s:"na",head:"No usable data",lines:[]};const G=res.groups;if(G.length<2)return{s:"na",head:"Only one construct",lines:[]};
+  let flFail=[],ht=[],htS=[];G.forEach((a,i)=>G.forEach((b,j)=>{if(j>=i)return;const lim=Math.min(a.k>=2?Math.sqrt(a.ave):Infinity,b.k>=2?Math.sqrt(b.ave):Infinity);if(Math.abs(res.C[i][j])>=lim)flFail.push(`${a.name}–${b.name}`);
+    const v=res.htmt[i][j];if(isFinite(v)){ht.push(`${b.name}–${a.name} = ${apa(v)}`);htS.push(v>=.9?"bad":v>=.85?"warn":"good")}}));
+  const crossBad=res.items.filter((it,i)=>{const own=G.findIndex(g=>g.name===it.g);const row=res.cross[i];return row.some((v,j)=>j!==own&&Math.abs(v)>=Math.abs(row[own]))}).map(it=>it.name);
+  const s=worst(htS.concat([flFail.length?"bad":"good",crossBad.length?"warn":"good"]));const maxH=Math.max(...res.htmt.flat().filter(isFinite));
+  const lines=[`HTMT: ${ht.join("; ")}.`,flFail.length?`Fornell–Larcker criterion not met for ${flFail.join(", ")}.`:"Fornell–Larcker criterion met for every pair (√AVE exceeds inter-construct correlations).",crossBad.length?`Items loading as high or higher on another construct: ${crossBad.join(", ")}.`:"Every item loads highest on its own construct."];
+  return{s,head:`Highest HTMT ${apa(maxH)}`,lines}}
+
+/* ---------- INTERNAL ---------- */
+const THREATS=[
+  {id:"temporal",n:"Ambiguous temporal precedence",d:"It is unclear whether the cause came before the effect.",h:"Measure the cause before the outcome, or use a longitudinal or experimental design.",on:["cross","quasi"]},
+  {id:"selection",n:"Selection",d:"Groups differed before the study in ways that could explain the result.",h:"Randomise; otherwise match groups or adjust for baseline differences.",on:["rct","quasi","cross"]},
+  {id:"history",n:"History",d:"Events outside the study happened during it and affected the outcome.",h:"Use a concurrent comparison group; log external events during data collection.",on:["rct","quasi","prepost"]},
+  {id:"maturation",n:"Maturation",d:"Participants changed naturally over time (grew, tired, learned).",h:"Include a comparison group measured over the same interval.",on:["quasi","prepost"]},
+  {id:"regression",n:"Regression to the mean",d:"Participants chosen for extreme scores drift toward average on retest.",h:"Avoid selecting on extreme pre-test scores, or include a comparison group drawn the same way.",on:["quasi","prepost"]},
+  {id:"attrition",n:"Attrition",d:"Participants dropped out, and those who left differ from those who stayed.",h:"Report overall and differential attrition; compare completers with non-completers.",on:["rct","quasi","prepost"]},
+  {id:"testing",n:"Testing",d:"Taking a pre-test changed how people answered the post-test.",h:"Use parallel forms, a longer gap, or a Solomon four-group design.",on:["rct","quasi","prepost"]},
+  {id:"instrumentation",n:"Instrumentation",d:"The measure, the raters or the procedure changed between occasions or groups.",h:"Keep instruments, raters and settings constant; train raters and check inter-rater reliability.",on:["rct","quasi","prepost","cross"]},
+  {id:"confound",n:"Confounding variables",d:"A third variable is related to both the cause and the outcome.",h:"Measure likely confounders and control for them statistically or by design.",on:["quasi","cross"]},
+  {id:"diffusion",n:"Diffusion of treatment",d:"The comparison group was exposed to parts of the intervention.",h:"Separate groups physically or in time; ask participants what they received.",on:["rct","quasi"]},
+  {id:"rivalry",n:"Compensatory rivalry or demoralisation",d:"The comparison group tried harder, or gave up, because of its assignment.",h:"Give the comparison group an equally engaging alternative activity.",on:["rct","quasi"]},
+  {id:"expectancy",n:"Experimenter and participant expectancy",d:"Researchers’ or participants’ expectations shaped the outcome.",h:"Blind assessors and participants to condition; standardise instructions.",on:["rct","quasi","prepost"]}];
+const EXTERNAL=[
+  {id:"sampling",n:"Population validity",d:"The target population is defined and the sample was drawn to represent it.",h:"Probability sampling is strongest; with convenience samples, describe who is and isn’t covered."},
+  {id:"ecological",n:"Ecological validity",d:"The study setting and tasks resemble the real situations the findings are meant for.",h:"Test in authentic settings, or explain how the lab task maps to practice."},
+  {id:"temporal",n:"Temporal validity",d:"Findings are not tied to a particular season, moment or cohort.",h:"Collect data at more than one time point, or argue why timing does not matter."},
+  {id:"treatment",n:"Treatment variation",d:"The intervention was delivered as it would be in everyday practice.",h:"Document fidelity; test with practitioners who are not the researchers."},
+  {id:"outcome",n:"Outcome variation",d:"Results hold across different ways of measuring the outcome.",h:"Use more than one outcome measure (self-report plus behavioural, for example)."},
+  {id:"reactivity",n:"Reactive effects",d:"Being studied (novelty, Hawthorne effect) is unlikely to explain the result.",h:"Use unobtrusive measures or allow a familiarisation period."},
+  {id:"interaction",n:"Interaction of effect with units or settings",d:"The effect is unlikely to change direction for other groups or contexts.",h:"Test for moderators (age, discipline, site) and report subgroup results."},
+  {id:"replication",n:"Replication",d:"The finding has been reproduced across sites, samples or prior studies.",h:"Run a second sample, or compare your effect with published estimates."}];
+const SCALE=[["2","Addressed"],["1","Partly"],["0","Not addressed"],["na","N/A"]];
+const EX_INT={selection:"1",history:"2",maturation:"1",regression:"na",attrition:"1",testing:"2",instrumentation:"2",confound:"0",diffusion:"1",rivalry:"2",expectancy:"1",temporal:"2"};
+const EX_EXT={sampling:"0",ecological:"2",temporal:"1",treatment:"1",outcome:"0",reactivity:"1",interaction:"1",replication:"0"};
+function threatHTML(list,prefix,stateObj,relevantFn){return list.map(t=>{const rel=relevantFn?relevantFn(t):true;const v=stateObj.ratings[t.id]??(rel?"":"na");
+  return `<div class="threat"><div><div class="nm">${esc(t.n)}${rel?"":'<span class="tag">rare for this design</span>'}</div><div class="ds">${esc(t.d)}</div><div class="hint"><span class="muted">How to address:</span> ${esc(t.h)}</div></div>
+  <div class="seg" role="radiogroup" aria-label="${esc(t.n)}">${SCALE.map(([val,lab])=>`<label><input type="radio" name="${prefix}-${t.id}" id="${prefix}-${t.id}-${val}" value="${val}" data-id="${t.id}" ${v===val?"checked":""}><span>${lab}</span></label>`).join("")}</div>
+  <input type="text" class="note" id="${prefix}-note-${t.id}" data-id="${t.id}" placeholder="Evidence or note (optional)" value="${esc(stateObj.notes[t.id]||"")}"></div>`}).join("")}
+function scoreOf(list,stateObj,relevantFn){let sum=0,app=0,rated=0,zero=[];list.forEach(t=>{const rel=relevantFn?relevantFn(t):true;const v=stateObj.ratings[t.id]??(rel?"":"na");if(v==="na")return;app++;if(v===""){return}rated++;sum+=+v;if(v==="0")zero.push(t.n)});
+  return{score:rated?sum/(2*rated):NaN,rated,app,zero,unrated:app-rated}}
+const relInt=t=>t.on.includes(state.internal.design);
+function renderInternal(){$("#iDesign").value=state.internal.design;$("#iThreats").innerHTML=threatHTML(THREATS,"it",state.internal,relInt);$("#iEx").hidden=!state.internal.example;updateInternalScore()}
+function updateInternalScore(){const s=scoreOf(THREATS,state.internal,relInt);$("#iMeter").style.width=isFinite(s.score)?(s.score*100)+"%":"0";
+  $("#iScoreTxt").innerHTML=isFinite(s.score)?`<b>${Math.round(s.score*100)}%</b> of applicable threats controlled · ${s.rated} of ${s.app} rated${s.zero.length?` · <span style="color:var(--bad)">${s.zero.length} not addressed</span>`:""}`:"No threats rated yet";updateDots()}
+function attritionCalc(){const g=id=>parseFloat($(id).value);const rT=g("#aRT"),aT=g("#aAT"),rC=g("#aRC"),aC=g("#aAC");if(![rT,aT,rC,aC].every(isFinite)||rT<=0||rC<=0){$("#aOut").innerHTML='<span class="muted small">Enter all four counts.</span>';return null}
+  if(aT>rT||aC>rC){$("#aOut").innerHTML='<p class="msg bad">Analysed counts cannot exceed assigned counts.</p>';return null}
+  const atT=1-aT/rT,atC=1-aC/rC,ov=1-(aT+aC)/(rT+rC),df=Math.abs(atT-atC);const s=ov<=.10&&df<=.05?"good":ov<=.20&&df<=.10?"warn":"bad";
+  $("#aOut").innerHTML=`<div class="kv"><span>Treatment attrition</span><b>${pct(atT)}</b></div><div class="kv"><span>Comparison attrition</span><b>${pct(atC)}</b></div><div class="kv"><span>Overall</span><b>${pct(ov)}</b></div><div class="kv"><span>Differential</span><b>${(df*100).toFixed(1)} pts</b></div><div>${chip(s,s==="good"?"Low concern":s==="warn"?"Moderate concern":"High concern")}</div><span class="small muted">Rule of thumb: low when overall ≤ 10% and differential ≤ 5 points. For a formal review, check the WWC attrition boundary.</span>`;
+  return{s,ov,df}}
+function baselineCalc(){const g=id=>parseFloat($(id).value);const v=["#bM1","#bS1","#bN1","#bM2","#bS2","#bN2"].map(g);if(!v.every(isFinite)||v[2]<2||v[5]<2||v[1]<=0||v[4]<=0){$("#bOut").innerHTML='<span class="muted small">Enter mean, SD and n for both groups.</span>';return null}
+  const gg=hedgesG(...v),a=Math.abs(gg);const s=a<=.05?"good":a<=.25?"warn":"bad";
+  $("#bOut").innerHTML=`<div class="kv"><span>Hedges’ g</span><b>${apa(gg,3)}</b></div><div>${chip(s,s==="good"?"Equivalent":s==="warn"?"Adjust for baseline in analysis":"Not equivalent")}</div><span class="small muted">WWC: |g| ≤ .05 satisfies equivalence; .05–.25 requires statistical adjustment for the baseline measure; above .25 the groups are not equivalent.</span>`;
+  return{s,g:gg}}
+function vInternal(){const sc=scoreOf(THREATS,state.internal,relInt);const at=attritionCalc(),bl=baselineCalc();const des=$("#iDesign").selectedOptions[0].text;
+  if(!sc.rated&&!at&&!bl)return{s:"na",head:"Not rated",lines:[]};
+  let s=!sc.rated?"na":sc.score>=.75?"good":sc.score>=.5?"warn":"bad";if(s==="good"&&sc.zero.length)s="warn";const parts=[s];if(at)parts.push(at.s==="bad"?"bad":at.s);if(bl)parts.push(bl.s);s=worst(parts.filter(x=>x!=="na"));
+  const lines=[`Design: ${des}.`];if(sc.rated)lines.push(`${Math.round(sc.score*100)}% of applicable threats controlled (${sc.rated} of ${sc.app} rated).`);if(sc.zero.length)lines.push(`Not addressed: ${sc.zero.join(", ")}.`);if(sc.unrated)lines.push(`${sc.unrated} applicable threat${sc.unrated>1?"s":""} not yet rated.`);
+  if(at)lines.push(`Attrition: overall ${pct(at.ov)}, differential ${(at.df*100).toFixed(1)} percentage points.`);if(bl)lines.push(`Baseline difference: Hedges’ g = ${apa(bl.g,3)}.`);
+  return{s,head:sc.rated?`${Math.round(sc.score*100)}% of threats controlled`:"Calculators only",lines}}
+
+/* ---------- EXTERNAL ---------- */
+function repCalc(){const rows=state.external.rows.filter(r=>r[0]!==""||isFinite(r[1])||isFinite(r[2]));const valid=rows.filter(r=>isFinite(r[1])&&r[1]>=0&&isFinite(r[2])&&r[2]>0);if(valid.length<2)return null;
+  const n=valid.reduce((s,r)=>s+r[1],0),P=valid.reduce((s,r)=>s+r[2],0);if(n<=0)return null;let chi=0,low=0;
+  const det=valid.map(r=>{const E=n*r[2]/P,res=(r[1]-E)/Math.sqrt(E);chi+=(r[1]-E)**2/E;if(E<5)low++;return{name:r[0],O:r[1],E,sp:r[1]/n,pp:r[2]/P,res}});
+  const df=valid.length-1,p=chiP(chi,df),w=Math.sqrt(chi/n);return{n,P,chi,df,p,w,det,low,k:valid.length}}
+function renderRepTable(){const e=state.external;$("#eAttr").value=e.attr;$("#eEx").hidden=!e.example;
+  let h='<table class="data"><thead><tr><th>Category</th><th class="n">Sample count</th><th class="n">Population %</th><th class="n">Sample %</th><th class="n">Expected</th><th class="n">Std. residual</th></tr></thead><tbody>';
+  e.rows.forEach((r,i)=>{h+=`<tr><td><input type="text" id="er-n-${i}" data-i="${i}" data-c="0" value="${esc(r[0])}" style="width:140px" aria-label="Category ${i+1} name"></td><td class="n"><input type="number" min="0" id="er-o-${i}" data-i="${i}" data-c="1" value="${isFinite(r[1])?r[1]:""}" style="width:90px;text-align:right" aria-label="Category ${i+1} sample count"></td><td class="n"><input type="number" min="0" step="any" id="er-p-${i}" data-i="${i}" data-c="2" value="${isFinite(r[2])?r[2]:""}" style="width:90px;text-align:right" aria-label="Category ${i+1} population percent"></td><td class="n" id="er-sp-${i}"></td><td class="n" id="er-e-${i}"></td><td class="n" id="er-r-${i}"></td></tr>`});
+  $("#eTable").innerHTML=h+"</tbody></table>";updateRep()}
+function updateRep(){const R=repCalc();state.external.rows.forEach((r,i)=>{const d=R&&R.det.find(x=>x.name===r[0]&&x.O===r[1]);const set=(id,v,c)=>{const el=$(id);if(el){el.textContent=v;el.className="n "+(c||"")}};
+    set(`#er-sp-${i}`,d?pct(d.sp):"—");set(`#er-e-${i}`,d?fx(d.E,1):"—",d&&d.E<5?"warn-c":"");set(`#er-r-${i}`,d?fx(d.res,2):"—",d&&Math.abs(d.res)>2?"bad-c":"")});
+  if(!R){$("#eStats").innerHTML='<p class="muted small">Enter at least two categories with a sample count and population percentage.</p>';updateDots();return}
+  const ps=R.p>=.05?"good":"bad",ws=R.w<.1?"good":R.w<.3?"warn":"bad";const wl=R.w<.1?"negligible":R.w<.3?"small":R.w<.5?"medium":"large";
+  $("#eStats").innerHTML=stat(ps,"χ² goodness of fit",fx(R.chi,2),`df = ${R.df}, p ${pf(R.p)}`)+stat(ws,"Cohen’s w",apa(R.w),`${wl} departure`)+stat("","Sample size",R.n,Math.abs(R.P-100)>.5?`population % sum to ${fx(R.P,1)}; rescaled`:"")+(R.low?stat("warn","Low expected counts",R.low,"categories with E < 5; merge them"):"");updateDots()}
+function renderExternal(){$("#eThreats").innerHTML=threatHTML(EXTERNAL,"et",state.external,null);updateExternalScore()}
+function updateExternalScore(){const s=scoreOf(EXTERNAL,state.external,null);$("#eMeter").style.width=isFinite(s.score)?(s.score*100)+"%":"0";
+  $("#eScoreTxt").innerHTML=isFinite(s.score)?`<b>${Math.round(s.score*100)}%</b> generalisability score · ${s.rated} of ${s.app} rated${s.zero.length?` · <span style="color:var(--bad)">${s.zero.length} not addressed</span>`:""}`:"No aspects rated yet";updateDots()}
+function vExternal(){const sc=scoreOf(EXTERNAL,state.external,null),R=repCalc();if(!sc.rated&&!R)return{s:"na",head:"Not assessed",lines:[]};const parts=[];const lines=[];
+  if(R){const rs=R.p>=.05&&R.w<.3?(R.det.some(d=>Math.abs(d.res)>2)?"warn":"good"):R.w<.3?"warn":"bad";parts.push(rs);
+    lines.push(`Representativeness on ${state.external.attr||"the characteristic"}: χ²(${R.df}, N = ${R.n}) = ${fx(R.chi,2)}, p ${pf(R.p)}, w = ${apa(R.w)}.`);
+    const over=R.det.filter(d=>Math.abs(d.res)>2);if(over.length)lines.push(`Over/under-represented: ${over.map(d=>`${d.name} (${pct(d.sp)} vs ${pct(d.pp)})`).join(", ")}.`)}
+  if(sc.rated){let s=sc.score>=.75?"good":sc.score>=.5?"warn":"bad";if(s==="good"&&sc.zero.length)s="warn";parts.push(s);lines.push(`Generalisability review: ${Math.round(sc.score*100)}% (${sc.rated} of ${sc.app} aspects rated).`);if(sc.zero.length)lines.push(`Not addressed: ${sc.zero.join(", ")}.`)}
+  return{s:worst(parts),head:sc.rated?`${Math.round(sc.score*100)}% generalisability score`:"Representativeness only",lines}}
+
+/* ---------- REPORT & dots ---------- */
+const ORDER=[["content","Content validity",vContent],["construct","Construct validity (convergent)",vConstruct],["discriminant","Discriminant validity",vDisc],["internal","Internal validity",vInternal],["external","External validity",vExternal]];
+const SLAB={good:"Supported",warn:"Partly supported",bad:"Not supported",na:"Not assessed"};
+function updateDots(){if(scope.view==="page"&&!$("#p-report").hidden)renderReport();ORDER.filter(([id])=>active(id)).forEach(([id,,fn])=>{try{const v=fn();const d=$("#d-"+id);d.className="dot "+v.s;d.title=SLAB[v.s]}catch(e){}})}
+function renderReport(){const list=ORDER.filter(([id])=>active(id));let cards="",txt=`VALIDITY SUMMARY\nGenerated ${new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})} with Validity Workbench\nTests included: ${list.map(o=>o[1]).join("; ")}\n`;
+  list.forEach(([id,name,fn])=>{const v=fn();cards+=`<div class="rep ${v.s}"><div>${chip(v.s,SLAB[v.s])}</div><h3>${name}</h3><p>${esc(v.head)}</p>${v.lines.length?`<ul>${v.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>`:""}<p><a href="#${id}" data-go="${id}" class="small">Go to ${name.split(" ")[0].toLowerCase()} test</a></p></div>`;
+    txt+=`\n${name.toUpperCase()}: ${SLAB[v.s]}\n${v.head}.\n${v.lines.map(l=>"  • "+l).join("\n")}\n`});
+  const notes=[];if(active("construct"))notes.push("Loadings are from one-factor principal axis factoring per construct; confirm with CFA/PLS-SEM.");if(active("discriminant"))notes.push("Construct correlations use mean item scores.");if(active("internal")||active("external"))notes.push("Internal and external validity ratings are the researcher's judgement and should be justified in the text.");
+  txt+=notes.length?`\nNotes\n${notes.map(n=>"  • "+n).join("\n")}\n`:"";$("#repCards").innerHTML=cards;$("#repText").textContent=txt}
+/* ---------- tabs ---------- */
+const TABS=["content","construct","discriminant","internal","external","report"];
+const ALL5=["content","construct","discriminant","internal","external"];
+const scope={mode:"all",picked:new Set(ALL5),view:"tabs"};
+try{const sv=JSON.parse(localStorage.getItem("vw-scope")||"null");if(sv){scope.mode=sv.mode==="pick"?"pick":"all";scope.view=sv.view==="page"?"page":"tabs";const pk=(sv.picked||[]).filter(x=>ALL5.includes(x));if(pk.length)scope.picked=new Set(pk)}}catch(e){}
+function active(id){return id==="report"||scope.mode==="all"||scope.picked.has(id)}
+let curTab="content";
+function show(tab,scroll){if(!TABS.includes(tab)||!active(tab))tab=TABS.find(active);curTab=tab;
+  if(scope.view==="page"){TABS.forEach(t=>{$("#p-"+t).hidden=!active(t);$("#t-"+t).setAttribute("aria-selected",t===tab)});renderReport();attritionCalc();baselineCalc();if(scroll)$("#p-"+tab).scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}
+  else{TABS.forEach(t=>{$("#p-"+t).hidden=t!==tab;$("#t-"+t).setAttribute("aria-selected",t===tab)});if(tab==="report")renderReport();if(tab==="internal"){attritionCalc();baselineCalc()};if(scroll)window.scrollTo({top:0})}
+  try{history.replaceState(null,"","#"+tab)}catch(e){}try{localStorage.setItem("vw-tab",tab)}catch(e){}}
+function applyScope(){$("#scope-"+scope.mode).checked=true;$("#view-"+scope.view).checked=true;$("#picks").hidden=scope.mode!=="pick";
+  ALL5.forEach(id=>{const cb=$("#pk-"+id);cb.checked=scope.picked.has(id);cb.disabled=scope.mode==="pick"&&scope.picked.size===1&&scope.picked.has(id);$("#t-"+id).hidden=!active(id)});
+  $("#wrap").classList.toggle("onepage",scope.view==="page");
+  const dc=$("#dataCard");if(!active("construct")&&active("discriminant"))$("#dWork").prepend(dc);else $("#p-construct .work").prepend(dc);
+  try{localStorage.setItem("vw-scope",JSON.stringify({mode:scope.mode,view:scope.view,picked:[...scope.picked]}))}catch(e){}
+  show(curTab,false);updateDots()}
+$("#setup").addEventListener("change",e=>{const t=e.target;if(t.name==="scope")scope.mode=t.value;else if(t.name==="view")scope.view=t.value;else if(t.type==="checkbox"){if(t.checked)scope.picked.add(t.value);else if(scope.picked.size>1)scope.picked.delete(t.value)}applyScope()});
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)show(b.dataset.tab,true)});
+document.addEventListener("click",e=>{const a=e.target.closest("[data-go]");if(a){e.preventDefault();show(a.dataset.go,true)}});
+
+/* ---------- wiring: content ---------- */
+$("#cGrid").addEventListener("input",e=>{const t=e.target,i=+t.dataset.i;if(t.classList.contains("iname"))state.content.items[i].name=t.value;else if(t.classList.contains("iobj"))state.content.items[i].obj=t.value;else{const v=t.value.trim().replace("−","-");state.content.items[i].r[+t.dataset.e]=v===""?null:(/^-?\d+$/.test(v)?+v:v)}markInvalid();renderContentResults()});
+$("#cMode").addEventListener("change",e=>{const m=e.target.value,c=state.content;if(m===c.mode)return;const map=MODEMAP[c.mode+">"+m];c.items.forEach(it=>it.r=it.r.map(v=>map[v]??null));c.mode=m;renderContentStatic();renderContentResults()});
+$("#cAddItem").onclick=()=>{state.content.items.push({name:`New item ${state.content.items.length+1}`,obj:"",r:[]});renderContentStatic();renderContentResults()};
+$("#cDelItem").onclick=()=>{if(state.content.items.length>1){state.content.items.pop();renderContentStatic();renderContentResults()}};
+$("#cAddExp").onclick=()=>{if(state.content.experts<40){state.content.experts++;renderContentStatic();renderContentResults()}};
+$("#cDelExp").onclick=()=>{const c=state.content;if(c.experts>1){c.experts--;c.items.forEach(it=>it.r.length=Math.min(it.r.length,c.experts));renderContentStatic();renderContentResults()}};
+$("#cSample").onclick=()=>{loadContentSample(state.content.mode);renderContentStatic();renderContentResults()};
+
+/* ---------- wiring: data ---------- */
+let dT;function setData(text){state.data.text=text;$("#dataText").value=text;runData()}
+function runData(){state.data.res=analyze(state.data.text);renderConstruct()}
+$("#dataText").addEventListener("input",e=>{state.data.text=e.target.value;clearTimeout(dT);dT=setTimeout(runData,350)});
+$("#dSample").onclick=()=>setData(sampleCSV());
+$("#dClear").onclick=()=>setData("");
+$("#dFile").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>setData(String(r.result));r.readAsText(f);e.target.value=""});
+
+/* ---------- wiring: internal ---------- */
+$("#iDesign").addEventListener("change",e=>{state.internal.design=e.target.value;renderInternal()});
+$("#iThreats").addEventListener("change",e=>{if(e.target.type==="radio"){state.internal.ratings[e.target.dataset.id]=e.target.value;state.internal.example=false;$("#iEx").hidden=true;updateInternalScore()}});
+$("#iThreats").addEventListener("input",e=>{if(e.target.classList.contains("note"))state.internal.notes[e.target.dataset.id]=e.target.value});
+$("#iReset").onclick=()=>{state.internal.ratings={};state.internal.example=false;renderInternal()};
+["#aRT","#aAT","#aRC","#aAC"].forEach(id=>$(id).addEventListener("input",()=>{attritionCalc();updateDots()}));
+["#bM1","#bS1","#bN1","#bM2","#bS2","#bN2"].forEach(id=>$(id).addEventListener("input",()=>{baselineCalc();updateDots()}));
+
+/* ---------- wiring: external ---------- */
+$("#eAttr").addEventListener("input",e=>{state.external.attr=e.target.value});
+$("#eTable").addEventListener("input",e=>{const t=e.target,i=+t.dataset.i,c=+t.dataset.c;if(isNaN(i))return;state.external.rows[i][c]=c===0?t.value:(t.value===""?NaN:parseFloat(t.value));state.external.example=false;$("#eEx").hidden=true;updateRep()});
+$("#eAdd").onclick=()=>{state.external.rows.push(["",NaN,NaN]);renderRepTable()};
+$("#eDel").onclick=()=>{if(state.external.rows.length>2){state.external.rows.pop();renderRepTable()}};
+$("#eThreats").addEventListener("change",e=>{if(e.target.type==="radio"){state.external.ratings[e.target.dataset.id]=e.target.value;state.external.example=false;updateExternalScore()}});
+$("#eThreats").addEventListener("input",e=>{if(e.target.classList.contains("note"))state.external.notes[e.target.dataset.id]=e.target.value});
+$("#eReset").onclick=()=>{state.external.ratings={};state.external.example=false;renderExternal()};
+
+/* ---------- copy ---------- */
+$("#copyBtn").addEventListener("click",()=>{const t=$("#repText").textContent;const done=m=>{$("#copyMsg").textContent=m;setTimeout(()=>$("#copyMsg").textContent="",2500)};
+  const fallback=()=>{const r=document.createRange();r.selectNodeContents($("#repText"));const s=getSelection();s.removeAllRanges();s.addRange(r);done("Text selected. Press Ctrl+C or ⌘C to copy.")};
+  try{navigator.clipboard.writeText(t).then(()=>done("Copied"),fallback)}catch(e){fallback()}});
+
+/* ---------- init ---------- */
+Object.assign(state.internal.ratings,EX_INT);Object.assign(state.external.ratings,EX_EXT);
+const preset={aRT:60,aAT:54,aRC:60,aAC:49,bM1:3.42,bS1:.81,bN1:54,bM2:3.31,bS2:.86,bN2:49};Object.entries(preset).forEach(([k,v])=>$("#"+k).value=v);
+renderContentStatic();renderContentResults();setData(sampleCSV());renderInternal();renderRepTable();renderExternal();attritionCalc();baselineCalc();updateDots();
+let start=(location.hash||"").slice(1);if(!TABS.includes(start)){try{start=localStorage.getItem("vw-tab")||"content"}catch(e){start="content"}}curTab=start;applyScope();if(scope.view==="page"&&location.hash)show(start,true);
+</script>
+
+</body></html>
