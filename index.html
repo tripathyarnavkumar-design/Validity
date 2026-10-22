@@ -971,6 +971,8 @@ td.spot-in{animation-name:spotInTd}
 .rvsw-b[aria-current="page"] small{color:var(--paper);opacity:.8}
 .rv-next{display:flex;gap:12px;flex-wrap:wrap}
 @media (max-width:600px){.rvsw{grid-template-columns:1fr}.rvsw-b+.rvsw-b{border-left:0;border-top:1px solid var(--ink)}}
+.rvsw{grid-template-columns:repeat(3,1fr)}.rvsw-b+.rvsw-b{border-left:1px solid var(--ink)}@media (max-width:600px){.rvsw{grid-template-columns:1fr}.rvsw-b+.rvsw-b{border-left:0;border-top:1px solid var(--ink)}}
+#pg-results.rv-only #repSec{margin-top:0;padding-top:0;border-top:0}
 </style>
 </head>
 <body>
@@ -1165,6 +1167,7 @@ td.spot-in{animation-name:spotInTd}
 
     <!-- STEP 3: RESULTS -->
     <section class="page" id="pg-results" hidden aria-labelledby="resH">
+      <nav class="rvsw" id="rvswRes" aria-label="Study design reviews" hidden><button type="button" data-page="internal" class="rvsw-b"><b>Internal validity</b><small>Threats to cause and effect · attrition · baseline equivalence</small></button><button type="button" data-page="external" class="rvsw-b"><b>External validity</b><small>Sample against population · generalisability</small></button><button type="button" data-goto="results" class="rvsw-b" aria-current="page"><b>Study report</b><small>Verdicts for both reviews · copy or export</small></button></nav>
       <div class="pg-top">
         <p class="sub"><span class="ph-n">4.</span> Results</p>
         <h2 class="pg-h" id="resH"></h2>
@@ -1245,7 +1248,7 @@ HTMTᵢⱼ = mean heterotrait r ÷ √(monotrait rᵢ · monotrait rⱼ)</pre>
 
     <!-- INTERNAL VALIDITY -->
     <section class="page" id="pg-internal" hidden aria-labelledby="h-internal">
-      <nav class="rvsw" aria-label="Study design reviews"><button type="button" data-page="internal" class="rvsw-b" aria-current="page"><b>Internal validity</b><small>Threats to cause and effect · attrition · baseline equivalence</small></button><button type="button" data-page="external" class="rvsw-b" ><b>External validity</b><small>Sample against population · generalisability</small></button></nav>
+      <nav class="rvsw" aria-label="Study design reviews"><button type="button" data-page="internal" class="rvsw-b" aria-current="page"><b>Internal validity</b><small>Threats to cause and effect · attrition · baseline equivalence</small></button><button type="button" data-page="external" class="rvsw-b" ><b>External validity</b><small>Sample against population · generalisability</small></button><button type="button" data-goto="results" class="rvsw-b" ><b>Study report</b><small>Verdicts for both reviews · copy or export</small></button></nav>
       <div class="pg-top"><p class="sub">No dataset needed</p><h2 class="pg-h" id="h-internal">Internal validity review</h2>
         <p class="lead">Can the effect be attributed to the cause you studied, rather than to something else?</p></div>
       <div class="exbar" id="ex-internal"></div>
@@ -1283,7 +1286,7 @@ g = (M₁ − M₂) ÷ s_pooled · J</pre>
 
     <!-- EXTERNAL VALIDITY -->
     <section class="page" id="pg-external" hidden aria-labelledby="h-external">
-      <nav class="rvsw" aria-label="Study design reviews"><button type="button" data-page="internal" class="rvsw-b" ><b>Internal validity</b><small>Threats to cause and effect · attrition · baseline equivalence</small></button><button type="button" data-page="external" class="rvsw-b" aria-current="page"><b>External validity</b><small>Sample against population · generalisability</small></button></nav>
+      <nav class="rvsw" aria-label="Study design reviews"><button type="button" data-page="internal" class="rvsw-b" ><b>Internal validity</b><small>Threats to cause and effect · attrition · baseline equivalence</small></button><button type="button" data-page="external" class="rvsw-b" aria-current="page"><b>External validity</b><small>Sample against population · generalisability</small></button><button type="button" data-goto="results" class="rvsw-b" ><b>Study report</b><small>Verdicts for both reviews · copy or export</small></button></nav>
       <div class="pg-top"><p class="sub">No dataset needed</p><h2 class="pg-h" id="h-external">External validity review</h2>
         <p class="lead">Will the findings hold for other people, settings, treatments and times?</p></div>
       <div class="exbar" id="ex-external"></div>
@@ -2213,9 +2216,9 @@ function runFix(d,x,f){if(f.act==="step"){startFixGuide(d,x.id)}
 
 /* ---------- Step 3: results ---------- */
 function renderResults(d){renderReport();
-  $("#repSec").hidden=!!d;
+  $("#repSec").hidden=!!d;$("#rvswRes").hidden=!!d;$("#pg-results .pg-top .sub").hidden=!d;$("#pg-results .res-bar").hidden=!d;$("#repSec .rep-head").hidden=!d;$("#pg-results").classList.toggle("rv-only",!d);
   if(!d){$("#resH").textContent="Study report";$("#resTabs").innerHTML="";$$(".tpanel").forEach(p=>p.hidden=true);$("#resView").hidden=true;
-    $("#resNext").innerHTML=`<button class="btn btn-line" type="button" id="addFromRes">Add a dataset</button>`;return}
+    $("#resNext").innerHTML="";return}
   prep(d);const inc=included(d);$("#resH").textContent=d.name;
   if(!inc.length){$("#resTabs").innerHTML="";$$(".tpanel").forEach(p=>p.hidden=true);$("#resView").hidden=true;
     $("#resNext").innerHTML=`<p class="hint">No tests are included. Go back to suitability to include tests.</p><button class="btn btn-line" type="button" data-goto="suit">Back to suitability</button>`;return}
@@ -2388,7 +2391,7 @@ function reportData(){const groups=[];study.datasets.forEach(d=>{prep(d);const i
   if(rv.length)groups.push({title:"Study design reviews",sub:"No dataset",items:rv,review:true});return groups}
 function renderReport(){const G=reportData();const anyEx=G.some(g=>g.ex||g.items.some(i=>i.ex));
   let txt=`RELIABILITY AND VALIDITY SUMMARY\nGenerated ${new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})} with Validex\n`;if(anyEx)txt+=`Note: entries marked [EXAMPLE DATA] use Validex's example data. Replace it before reporting.\n`;
-  if(!G.length){$("#repCards").innerHTML=`<div class="empty"><b>Nothing to report yet.</b> Add a dataset and include at least one test, or rate the study design. <button class="linkbtn" type="button" id="addFromRep">Add a dataset</button></div>`;$("#repText").textContent=txt;return}
+  if(!G.length){$("#repCards").innerHTML=cur()?`<div class="empty"><b>Nothing to report yet.</b> Include at least one test on the suitability step, or rate the study design.</div>`:`<div class="empty"><b>Nothing to report yet.</b> Rate the threats in the <button class="linkbtn" type="button" data-page="internal">internal validity review</button> or the <button class="linkbtn" type="button" data-page="external">external validity review</button>, and their verdicts will appear here.</div>`;$("#repText").textContent=txt;return}
   $("#repCards").innerHTML=G.map(g=>`<section class="rep-group"><div class="rg-h"><h3>${esc(g.title)}</h3><span class="muted">${esc(g.sub)}</span>${g.ex?'<span class="tag ex">Example data</span>':""}</div><div class="rep-list">${g.items.map(it=>`<article class="rep"><div class="rep-top">${chip(it.v.s,SLAB[it.v.s])}${it.ex?'<span class="tag ex">Example data</span>':""}</div>${g.review?`<button class="linkbtn" type="button" data-page="${it.id}">Open review</button>`:`<button class="linkbtn" type="button" data-open="${it.ds}:${it.id}">Open results</button>`}<h4>${it.name}</h4><p class="head">${esc(it.v.head)}</p>${it.v.lines.length?`<ul>${it.v.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>`:""}</article>`).join("")}</div></section>`).join("");
   G.forEach(g=>{txt+=`\n${g.review?"STUDY DESIGN REVIEWS":`DATASET: ${g.title} (${g.sub.toLowerCase()})`}${g.ex?" [EXAMPLE DATA]":""}\n`;
     g.items.forEach(it=>{txt+=`\n${it.name.toUpperCase()}: ${SLAB[it.v.s]}${it.ex?" [EXAMPLE DATA]":""}\n${it.v.head}.\n${it.v.lines.map(l=>"  • "+l).join("\n")}\n`})});
