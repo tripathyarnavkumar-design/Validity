@@ -960,6 +960,17 @@ td.spot-in{animation-name:spotInTd}
 .credit .dev a,.ws-credit a{color:var(--ink);font-weight:700;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--red)}
 .credit .dev a:hover,.ws-credit a:hover{color:var(--red);text-decoration-thickness:2px}
 .ws-credit{margin:24px 0 0;padding-top:14px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3)}
+/* switch between the two study design reviews */
+.rvsw{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--ink)}
+.rvsw-b{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px;border:0;background:var(--paper);color:var(--ink);text-align:left;cursor:pointer;transition:background-color .15s}
+.rvsw-b+.rvsw-b{border-left:1px solid var(--ink)}
+.rvsw-b b{font-size:14px;font-weight:700}
+.rvsw-b small{font-size:12px;color:var(--ink-3)}
+.rvsw-b:hover{background:var(--hover)}
+.rvsw-b[aria-current="page"]{background:var(--ink);color:var(--paper)}
+.rvsw-b[aria-current="page"] small{color:var(--paper);opacity:.8}
+.rv-next{display:flex;gap:12px;flex-wrap:wrap}
+@media (max-width:600px){.rvsw{grid-template-columns:1fr}.rvsw-b+.rvsw-b{border-left:0;border-top:1px solid var(--ink)}}
 </style>
 </head>
 <body>
@@ -1234,6 +1245,7 @@ HTMTᵢⱼ = mean heterotrait r ÷ √(monotrait rᵢ · monotrait rⱼ)</pre>
 
     <!-- INTERNAL VALIDITY -->
     <section class="page" id="pg-internal" hidden aria-labelledby="h-internal">
+      <nav class="rvsw" aria-label="Study design reviews"><button type="button" data-page="internal" class="rvsw-b" aria-current="page"><b>Internal validity</b><small>Threats to cause and effect · attrition · baseline equivalence</small></button><button type="button" data-page="external" class="rvsw-b" ><b>External validity</b><small>Sample against population · generalisability</small></button></nav>
       <div class="pg-top"><p class="sub">No dataset needed</p><h2 class="pg-h" id="h-internal">Internal validity review</h2>
         <p class="lead">Can the effect be attributed to the cause you studied, rather than to something else?</p></div>
       <div class="exbar" id="ex-internal"></div>
@@ -1266,10 +1278,12 @@ g = (M₁ − M₂) ÷ s_pooled · J</pre>
             <div class="out" id="bOut"></div></div>
         </div>
       </div>
+      <div class="nextbar rv-next"><button class="btn btn-red btn-lg" type="button" data-page="external">Next: external validity review<svg aria-hidden="true"><use href="#i-arrow"/></svg></button></div>
     </section>
 
     <!-- EXTERNAL VALIDITY -->
     <section class="page" id="pg-external" hidden aria-labelledby="h-external">
+      <nav class="rvsw" aria-label="Study design reviews"><button type="button" data-page="internal" class="rvsw-b" ><b>Internal validity</b><small>Threats to cause and effect · attrition · baseline equivalence</small></button><button type="button" data-page="external" class="rvsw-b" aria-current="page"><b>External validity</b><small>Sample against population · generalisability</small></button></nav>
       <div class="pg-top"><p class="sub">No dataset needed</p><h2 class="pg-h" id="h-external">External validity review</h2>
         <p class="lead">Will the findings hold for other people, settings, treatments and times?</p></div>
       <div class="exbar" id="ex-external"></div>
@@ -1294,6 +1308,7 @@ w  = √(χ² ÷ n)</pre>
         <div class="threats" id="eThreats"></div>
         <div class="toolbar"><button class="btn btn-line" type="button" id="eReset">Clear all ratings</button></div>
       </div>
+      <div class="nextbar rv-next"><button class="btn btn-red btn-lg" type="button" data-goto="results">See the study report<svg aria-hidden="true"><use href="#i-arrow"/></svg></button><button class="btn btn-line" type="button" data-page="internal">Back to internal validity review</button></div>
     </section>
 
     <!-- REPORT -->
@@ -2198,6 +2213,7 @@ function runFix(d,x,f){if(f.act==="step"){startFixGuide(d,x.id)}
 
 /* ---------- Step 3: results ---------- */
 function renderResults(d){renderReport();
+  $("#repSec").hidden=!!d;
   if(!d){$("#resH").textContent="Study report";$("#resTabs").innerHTML="";$$(".tpanel").forEach(p=>p.hidden=true);$("#resView").hidden=true;
     $("#resNext").innerHTML=`<button class="btn btn-line" type="button" id="addFromRes">Add a dataset</button>`;return}
   prep(d);const inc=included(d);$("#resH").textContent=d.name;
