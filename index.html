@@ -985,6 +985,7 @@ td.spot-in{animation-name:spotInTd}
 .kind[aria-checked="true"] .k-tf{color:color-mix(in srgb,var(--paper) 80%,transparent)}
 .kind[aria-checked="true"] .k-t1{background:color-mix(in srgb,var(--paper) 14%,transparent);color:var(--paper)}
 .kind[aria-checked="true"] .k-t1::before{background:var(--paper)}
+#pg-data.entry>section#entryGuide.entry-guide{display:flex!important}
 </style>
 </head>
 <body>
@@ -1099,7 +1100,7 @@ td.spot-in{animation-name:spotInTd}
     <section class="page" id="pg-data" hidden aria-labelledby="dsName">
       <section class="entry-guide" id="entryGuide" aria-labelledby="egH">
         <h2 class="pg-h" id="egH">Which data does each test need?</h2>
-        <p class="lead">Upload one dataset at a time. Different tests need differently shaped data; find the shape of yours below, then upload it or try an example.</p>
+        <p class="lead">Different tests need differently shaped data. Find the shape of yours below, then upload it, choose an example, or enter or paste it using the options above. One dataset is tested at a time.</p>
         <div class="guide" id="entryGuideW"></div>
       </section>
       <section class="dscard" id="dsCard" aria-label="Dataset">
@@ -2130,7 +2131,7 @@ const TEMPLATE={survey:["id","Q1","Q2","Q3","Q4"],expert:["Item","E1","E2","E3"]
 const templateCells=k=>padCells(TEMPLATE[k]?[TEMPLATE[k]]:[[]]);
 function renderData(d){prep(d);$("#dsName").value=d.name;
   /* entry state: only upload, the data guide and examples until the dataset has data */
-  const entry=!hasData(d)&&!d.file&&!d.example&&!d.manual;$("#pg-data").classList.toggle("entry",entry);$("#pg-data").classList.toggle("blank",!entry&&!hasData(d)&&!!d.manual);
+  const entry=!hasData(d)&&!d.file&&!d.example&&!d.manual;$("#pg-data").classList.toggle("entry",entry);if(entry)$("#entryGuideW").innerHTML=guideHTML();$("#pg-data").classList.toggle("blank",!entry&&!hasData(d)&&!!d.manual);
   if(entry){$("#entryH").textContent=d.kind?`Add ${KINDS[d.kind].label.toLowerCase()}`:"Add a dataset";$("#entryLead").textContent=d.kind?`${KINDS[d.kind].shape}. Upload one file, and Validex checks which tests it supports.`:"Upload one file: survey responses, expert ratings, scores from two occasions, or rater codes. Validex works out what kind of data it is and which reliability and validity tests it supports."}
   $("#ex-data")&&$("#ex-data").remove();
   $("#kindTag").textContent="";const empty=!hasData(d);renderKindChrome(d);
