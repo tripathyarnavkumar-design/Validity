@@ -986,6 +986,81 @@ td.spot-in{animation-name:spotInTd}
 .kind[aria-checked="true"] .k-t1{background:color-mix(in srgb,var(--paper) 14%,transparent);color:var(--paper)}
 .kind[aria-checked="true"] .k-t1::before{background:var(--paper)}
 #pg-data.entry>section#entryGuide.entry-guide{display:flex!important}
+
+/* ===== Landing: split view on a 12-column grid, after DataViz Now ===== */
+/* ===== Landing test: split view on a 12-column grid, after DataViz Now ===== */
+.landing.lt{display:block;padding:0;min-height:100dvh}
+.lt-split{--g:24px;--cw:min(1040px,100vw - 2*clamp(24px,7vw,160px));width:var(--cw);margin:0 auto;min-height:100dvh;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--g);row-gap:calc(var(--g)*2);align-items:start;align-content:center;padding:calc(var(--g)*2) 0}
+.lt-l{grid-column:1/span 5;display:flex;flex-direction:column;align-items:flex-start;gap:calc(var(--g)*1);min-width:0}
+.lt-r{grid-column:7/span 6;min-width:0;align-self:stretch;display:flex;flex-direction:column;gap:12px}
+.lt .hero{align-items:flex-start;text-align:left;gap:calc(var(--g)*.6);margin:0}
+.lt .hero-mark{font-size:30px;gap:10px;line-height:1;justify-content:flex-start}
+.lt .hero-mark svg{width:30px;height:30px}
+.lt .hero-sub{font-size:16px;line-height:1.55;max-width:44ch;text-align:left;margin:0;text-wrap:pretty}
+.lt .pick-opts{width:100%;grid-template-columns:minmax(0,1fr)}
+.lt .pick-opts .opt{padding:14px 16px 12px;gap:6px}
+.lt .opt-hd{grid-template-columns:auto minmax(0,1fr) auto}
+.lt .opt-hd .opt-l{font-size:22px}
+.lt .opt-hd .opt-t{font-size:16px}
+.lt .opt-hd .opt-ill{width:104px;max-height:40px}
+.lt .pick-opts .opt-d{font-size:14px;text-wrap:pretty}
+.lt .opt-tests{padding:8px 10px;gap:5px;margin-top:2px}
+.lt .ot-row{grid-template-columns:70px minmax(0,1fr)}
+.lt .ot{font-size:11.5px;padding:1px 6px}
+.lt .pick-opts .opt-m{padding-top:6px}
+.lt .land-links{justify-content:flex-start;margin:0}
+.lt .land-links:empty,.lt .land-links:has(#studyStatus:empty):has(#clearStudy[hidden]){display:none}
+.lt .credit{margin:0;max-width:52ch;text-align:left;justify-content:flex-start}
+.lt .credit .dev{text-align:left;font-size:15px;max-width:none}
+/* the wall */
+.lt .marq-h{margin:0;font-size:15px;line-height:20px;color:var(--ink-2)}
+.lt .marq-h b{color:var(--ink);font-weight:700}
+.lt .marq-h #ltN{color:var(--red)}
+.lt .marq-box{--p:16px;flex:1;min-height:340px;container-type:size;border:1px solid var(--ink);background:var(--paper);padding:var(--p) 0;display:flex;flex-direction:column;justify-content:space-between;gap:var(--p);overflow:hidden}
+.lt .marq-row{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+.lt .marq-track{display:flex;gap:var(--g);width:max-content;animation:ltMarq 200s linear infinite}
+.lt .marq-row[data-dir="r"] .marq-track{animation-direction:reverse;animation-duration:230s}
+.lt .marq-row:nth-child(3) .marq-track{animation-duration:250s}
+.lt .marq-box:hover .marq-track,.lt .marq-box:focus-within .marq-track{animation-play-state:paused}
+@keyframes ltMarq{from{transform:translateX(0)}to{transform:translateX(calc(-50% - var(--g)/2))}}
+.lt .mq{--th:calc((100cqh - 2*var(--p) - 3*19px) / 3);flex:none;width:calc(var(--th)*1.6);border:0;background:none;padding:0;cursor:pointer;display:flex;flex-direction:column;gap:5px;text-align:left;color:var(--ink)}
+.lt .mq .th{display:block;width:100%;height:var(--th);background:#fff;outline:1px solid var(--rule);outline-offset:-1px;overflow:hidden;transition:outline-color .15s ease}
+.lt .mq .th svg{width:100%;height:100%;display:block;padding:6px}
+.lt .mq .nm{display:flex;align-items:center;gap:5px;font-size:11px;line-height:14px;font-weight:600;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lt .mq-k{flex:none;width:6px;height:6px}
+.lt .mq-k.rel{background:var(--red)}
+.lt .mq-k.val{border:1.5px solid var(--red)}
+.lt .mq:hover .th,.lt .mq:focus-visible .th{outline:2px solid var(--red);outline-offset:-2px}
+.lt .mq:focus-visible{outline:none}
+.lt .mq:hover .nm{color:var(--ink)}
+.lt .marq-key{display:flex;gap:16px;font-size:12px;color:var(--ink-3);margin:0}
+.lt .marq-key span{display:inline-flex;align-items:center;gap:6px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lt .mq .th{background:#141414}}
+:root[data-theme="dark"] .lt .mq .th{background:#141414}
+@media (prefers-reduced-motion:reduce){.lt .marq-track{animation:none}.lt .marq-row{overflow-x:auto}}
+@media (max-width:1199px){.lt-l{grid-column:1/span 6}.lt-r{grid-column:7/span 6}}
+@media (max-width:959px){
+  .lt-split{min-height:0;row-gap:calc(var(--g)*1.5);align-content:start}
+  .lt-l{display:contents}
+  .lt .hero,.lt .pick-opts,.lt .land-links,.lt-r,.lt .credit{grid-column:1/-1}
+  .lt .hero{order:1}.lt .pick-opts{order:2}.lt .land-links{order:3}.lt-r{order:4}.lt .credit{order:5}
+  .lt .marq-box{flex:none;height:360px}}
+@media (max-width:600px){.lt-split{--g:16px}.lt .marq-box{height:330px}.lt .hero-mark{font-size:28px}}
+.lt-r{align-self:center}
+.lt .marq-box{flex:none;height:440px;min-height:0}
+@media (max-width:959px){.lt .marq-box{height:360px}}
+@media (max-width:600px){.lt .marq-box{height:330px}}
+/* v2: no statistics wall; option B takes the right half */
+.lt-l{display:contents}
+.lt .hero{grid-column:1/span 6;grid-row:1}
+.lt .pick-opts{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--g);row-gap:var(--g);background:none;border:0;width:auto}
+.lt .pick-opts .opt{border:1px solid var(--ink);height:100%}
+.lt .land-links{grid-column:1/-1;grid-row:3}
+.lt .credit{grid-column:1/span 6;grid-row:4}
+.lt-split{row-gap:calc(var(--g)*1.25)}
+@media (max-width:959px){.lt .hero,.lt .pick-opts,.lt .land-links,.lt .credit{grid-column:1/-1;grid-row:auto;order:0}.lt .pick-opts{grid-template-columns:minmax(0,1fr)}}
+@media (min-width:960px){.lt .credit{grid-row:3}.lt .land-links{grid-row:4}}
+
 </style>
 </head>
 <body>
@@ -1004,7 +1079,8 @@ td.spot-in{animation-name:spotInTd}
 </svg>
 
 <!-- ============ LANDING ============ -->
-<section class="landing" id="landing" aria-labelledby="hero-title">
+<section class="landing lt" id="landing" aria-labelledby="hero-title">
+<div class="lt-split"><div class="lt-l">
   <div class="hero">
     <h1 class="hero-mark" id="hero-title"><svg aria-hidden="true"><use href="#vx-mark"/></svg>Validex</h1>
     <p class="hero-sub">Check the reliability and validity of research data. Add a dataset and Validex works out which tests it can support, runs them, and writes a summary for your methods section.</p>
@@ -1050,6 +1126,7 @@ td.spot-in{animation-name:spotInTd}
   <p class="land-links"><span id="studyStatus"></span><button class="linkbtn" type="button" id="clearStudy" hidden>Clear the saved study</button></p>
 
   <p class="credit"><span class="dev">This tool is developed by <a href="https://www.linkedin.com/in/arnav-kumar-tripathy/" target="_blank" rel="noopener">Arnav<span class="vh"> (LinkedIn, opens in a new tab)</span></a>. Have an idea that would make it better? <a href="mailto:arnavkumar.tripathy@gmail.com?subject=Validex%20suggestion">I’d be glad to hear from you</a>.</span></p>
+</div></div>
 </section>
 
 <!-- ============ WORKSPACE ============ -->
