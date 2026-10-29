@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light" style="color-scheme:only light">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="only light">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Validex — reliability and validity testing</title>
 <meta name="description" content="Validex checks which reliability and validity tests your research data supports, runs them in the browser, and writes a summary for your methods section.">
-<meta property="og:type" content="website"><meta property="og:site_name" content="Arnav Kumar Tripathy"><meta property="og:title" content="Validex"><meta property="og:description" content="Check the reliability and validity of research data. Validex picks the tests your data supports, runs them and writes a methods summary."><meta property="og:url" content="https://tripathyarnavkumar-design.github.io/Validity/"><meta property="og:image" content="https://tripathyarnavkumar-design.github.io/Validity/og.jpg"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Validex results for a survey, with reliability scores for each scale and item"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Validex"><meta name="twitter:description" content="Check the reliability and validity of research data. Validex picks the tests your data supports, runs them and writes a methods summary."><meta name="twitter:image" content="https://tripathyarnavkumar-design.github.io/Validity/og.jpg"><link rel="canonical" href="https://tripathyarnavkumar-design.github.io/Validity/">
+<meta property="og:title" content="Validex">
+<meta property="og:description" content="Validex checks which reliability and validity tests your research data supports, runs them in the browser, and writes a summary for your methods section.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='13.5' y='2.5' width='8' height='8' fill='%23A5B4FC'/%3E%3Cpath d='M2 12.2h5.2l3.1 4.6L17.6 8.6h4.6L10.4 22.4Z' fill='%234F46E5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +28,7 @@
   --ease-out:cubic-bezier(.23,1,.32,1);
   color-scheme:light;
 }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+@media not all /* automatic dark mode disabled */{ :root:not([data-theme="light"]){
   --paper:#0E0E0E; --ink:#F2F2F2; --ink-2:#C4C4C4; --ink-3:#9A9A9A; --rule:#2E2E2E; --rule-strong:#F2F2F2;
   --field:#1B1B1B; --hover:#1E1E1E; --red:#818CF8; --red-ink:#A5B4FC; --on-red:#0A0A0A; --tint:#1C1D33;
   --ok:#3CC47C; --ok-bg:#12291D; --warn:#F08A4B; --warn-bg:#2E1E12; --bad:#F2716A; --bad-bg:#331716; --na:#9A9A9A; color-scheme:dark } }
@@ -587,7 +589,7 @@ tr.prim td.good-c{background:var(--ok-bg)} tr.prim td.warn-c{background:var(--wa
 .se-grid td.mixed{box-shadow:inset 0 0 0 2px #D92D20;background:#FEF0EF}
 .se-grid td.blank input:focus{box-shadow:inset 0 0 0 2px #E8650E}
 .se-grid td.mixed input:focus{box-shadow:inset 0 0 0 2px #D92D20}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .se-grid td.blank{background:#2A1A10}:root:not([data-theme="light"]) .se-grid td.mixed{background:#2E1414}}
+@media not all /* automatic dark mode disabled */{:root:not([data-theme="light"]) .se-grid td.blank{background:#2A1A10}:root:not([data-theme="light"]) .se-grid td.mixed{background:#2E1414}}
 :root[data-theme="dark"] .se-grid td.blank{background:#2A1A10} :root[data-theme="dark"] .se-grid td.mixed{background:#2E1414}
 .se-more td{padding:10px 8px;font-size:12.5px;color:var(--ink-3)}
 .se-hb{position:absolute;top:50%;right:2px;transform:translateY(-50%);width:14px;height:18px;border:0;padding:0;background:transparent;color:inherit;display:grid;place-items:center;opacity:0;cursor:pointer;transition:opacity .15s ease}
@@ -1034,7 +1036,7 @@ td.spot-in{animation-name:spotInTd}
 .lt .mq:hover .nm{color:var(--ink)}
 .lt .marq-key{display:flex;gap:16px;font-size:12px;color:var(--ink-3);margin:0}
 .lt .marq-key span{display:inline-flex;align-items:center;gap:6px}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lt .mq .th{background:#141414}}
+@media not all /* automatic dark mode disabled */{:root:not([data-theme="light"]) .lt .mq .th{background:#141414}}
 :root[data-theme="dark"] .lt .mq .th{background:#141414}
 @media (prefers-reduced-motion:reduce){.lt .marq-track{animation:none}.lt .marq-row{overflow-x:auto}}
 @media (max-width:1199px){.lt-l{grid-column:1/span 6}.lt-r{grid-column:7/span 6}}
@@ -1060,6 +1062,10 @@ td.spot-in{animation-name:spotInTd}
 @media (max-width:959px){.lt .hero,.lt .pick-opts,.lt .land-links,.lt .credit{grid-column:1/-1;grid-row:auto;order:0}.lt .pick-opts{grid-template-columns:minmax(0,1fr)}}
 @media (min-width:960px){.lt .credit{grid-row:3}.lt .land-links{grid-row:4}}
 
+
+/* Always light: no automatic dark mode from the system theme or the browser */
+:root{color-scheme:only light}
+html,body{background:#FFFFFF}
 </style>
 </head>
 <body>
